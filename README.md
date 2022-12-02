@@ -19,13 +19,14 @@
 - [x] Bilibili
 - [x] YouTube
 - [x] Twitch
-- [x] Twitcasting
+- [x] Twitcasting（未测试）
+- [ ] 更多平台欢迎PR
 
 ## 安装
 
 ### 下载
 
-https://raw.githubusercontent.com/auqhjjqdo/LiveRecorder/main/main.py
+<https://raw.githubusercontent.com/auqhjjqdo/LiveRecorder/main/live_recorder.py>
 
 ### pip安装依赖
 
@@ -42,17 +43,18 @@ pip install streamlink ffmpeg-python httpx jsonpath loguru
 ## 配置
 
 ### 直播录制配置
-打开`main.py`，按照示例修改`config`变量，注意逗号和引号
 
-| 字段       | 可填内容                                                                                | 备注               |
-|----------|-------------------------------------------------------------------------------------|------------------|
-| platform | `bilibili`、`youtube`、`twitch`、`twitcasting`                                         | 必须为小写            |
-| id       | 对应平台的录播用户id<br/>bilibili为直播间房间号<br/>youtube为频道id<br/>twitch为登录名<br/>twitcasting为用户名 | 参考示例格式，直播url即可找到 |
-| name     | 自定义录播主播名                                                                            | 用于录制文件区分         |
+打开`live_recorder.py`，按照示例修改`config`变量，注意逗号、引号和缩进
+
+| 字段       | 含义          | 可填内容                                                                | 备注                   |
+|----------|-------------|---------------------------------------------------------------------|----------------------|
+| platform | 直播平台        | `bilibili`<br/>`youtube`<br/>`twitch`<br/>`twitcasting`             | 必须为小写                |
+| id       | 对应平台的直播用户id | bilibili为直播间房间号<br/>youtube为频道id<br/>twitch为登录名<br/>twitcasting为用户名 | 参考示例格式<br/>直播url即可找到 |
+| name     | 自定义主播名      | 任意字符                                                                | 用于录制文件区分             |
 
 ### 代理配置
 
-修改`proxies`变量为代理地址，支持http/socks5，Windows平台可不修改，会自动检测系统代理
+修改`proxies`变量为代理地址，支持各种代理自定义，具体格式参照<https://www.python-httpx.org/advanced/#http-proxying>
 
 ## 友链
 
