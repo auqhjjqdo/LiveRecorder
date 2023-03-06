@@ -22,7 +22,7 @@ config = (
     {'platform': 'youtube', 'id': 'UCfuz6xYbYFGsWWBi3SpJI1w', 'name': '桜帆鹿乃'},
     {'platform': 'youtube', 'id': 'UCN3M-Nwa-eaZuMhPb5c3Pww', 'name': 'MKLNtic'},
     {'platform': 'twitch', 'id': 'kanomahoro', 'name': '桜帆鹿乃'},
-    {'platform': 'twitcasting', 'id': 'kano_2525', 'name': '鹿乃'}
+    {'platform': 'twitcasting', 'id': 'kano_2525', 'name': '鹿乃'},
 )
 
 
@@ -186,10 +186,11 @@ class Twitch(LiveRecoder):
 
 class Twitcasting(LiveRecoder):
     async def twitcasting(self):
+        self.client.headers['Origin'] = 'https://twitcasting.tv/'
+        self.url = f'https://twitcasting.tv/{self.id}'
         response = (await self.client.get(
             url=f'https://frontendapi.twitcasting.tv/users/{self.id}/latest-movie'
         )).json()
-        self.url = f'https://twitcasting.tv/{self.id}'
         if response['movie']['is_on_live'] and self.url not in recording:
             movie_id = response['movie']['id']
             response = (await self.client.post(
