@@ -1,0 +1,41 @@
+{
+    "interval": 10,
+    "proxy": "http://127.0.0.1:7890",
+    "user": [
+        {
+            "platform": "bilibili",
+            "id": "15152878",
+            "name": "鹿乃"
+        },
+        {
+            "platform": "bilibili",
+            "id": "25600815",
+            "name": "MKLNtic"
+        },
+        {
+            "platform": "youtube",
+            "id": "UCShXNLMXCfstmWKH_q86B8w",
+            "name": "斑比鹿乃"
+        },
+        {
+            "platform": "youtube",
+            "id": "UCfuz6xYbYFGsWWBi3SpJI1w",
+            "name": "桜帆鹿乃"
+        },
+        {
+            "platform": "youtube",
+            "id": "UCN3M-Nwa-eaZuMhPb5c3Pww",
+            "name": "MKLNtic"
+        },
+        {
+            "platform": "twitch",
+            "id": "kanotic_",
+            "name": "桜帆鹿乃"
+        },
+        {
+            "platform": "twitcasting",
+            "id": "kano_2525",
+            "name": "鹿乃"
+        }
+    ]
+}

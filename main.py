@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import time
 from functools import partial
@@ -7,37 +8,22 @@ from urllib import request
 
 import ffmpeg
 import httpx
+from httpx_socks import AsyncProxyTransport
 from jsonpath import jsonpath
 from loguru import logger
 import streamlink
 
 recording = []
-# proxies = 'http://127.0.0.1:7890'  # Clash默认代理地址
-proxies = request.getproxies().get('http')  # 自动检测系统代理
-interval = 10  # 检测间隔
-config = (
-    {'platform': 'bilibili', 'id': '15152878', 'name': '鹿乃'},
-    {'platform': 'bilibili', 'id': '25600815', 'name': 'MKLNtic'},
-    {'platform': 'youtube', 'id': 'UCShXNLMXCfstmWKH_q86B8w', 'name': '斑比鹿乃'},
-    {'platform': 'youtube', 'id': 'UCfuz6xYbYFGsWWBi3SpJI1w', 'name': '桜帆鹿乃'},
-    {'platform': 'youtube', 'id': 'UCN3M-Nwa-eaZuMhPb5c3Pww', 'name': 'MKLNtic'},
-    {'platform': 'twitch', 'id': 'kanomahoro', 'name': '桜帆鹿乃'},
-    {'platform': 'twitcasting', 'id': 'kano_2525', 'name': '鹿乃'},
-)
 
 
 class LiveRecoder:
-    def __init__(self, data):
-        self.client = httpx.AsyncClient(
-            headers={
-                'User-Agent': 'Android'
-            },
-            proxies=proxies
-        )
-
-        self.platform = data['platform']
-        self.id = data['id']
-        self.name = data['name']
+    def __init__(self, config, item):
+        self.proxy = request.getproxies().get('http')
+        self.client = self.get_client(config)
+        self.interval = config['interval']
+        self.platform = item['platform']
+        self.id = item['id']
+        self.name = item['name']
         self.url = ''
         self.title = ''
         self.filename = ''
@@ -49,9 +35,19 @@ class LiveRecoder:
                 await getattr(self, self.platform)()
             except Exception as error:
                 logger.error(f'[{self.platform}][{self.name}]{repr(error)}')
-            await asyncio.sleep(interval)
+            await asyncio.sleep(self.interval)
 
-    async def get_filename(self):
+    def get_client(self, config):
+        kwargs = {'headers': {'User-Agent': 'Android'}}
+        if config.get('proxy'):
+            self.proxy = config['proxy']
+            if 'socks5' in config['proxy']:
+                kwargs['transport'] = AsyncProxyTransport.from_url(config['proxy'])
+            else:
+                kwargs['proxies'] = self.proxy
+        return httpx.AsyncClient(**kwargs)
+
+    def get_filename(self):
         start_time = time.localtime()
         datetime = time.strftime('%Y.%m.%d', start_time)
         # 文件名去除特殊字符
@@ -66,7 +62,7 @@ class LiveRecoder:
             self.filename = self.filename.replace(datetime, time.strftime('%Y.%m.%d_%H%M%S', start_time))
 
     async def start_record(self):
-        await self.get_filename()
+        self.get_filename()
         logger.info(f'开始录制：{self.filename}')
         # 添加到录制列表
         task = asyncio.current_task()
@@ -86,8 +82,8 @@ class LiveRecoder:
 
     def stream_writer(self):
         session = streamlink.Streamlink()
-        if proxies:
-            session.set_option('http-proxy', proxies)
+        if self.proxy:
+            session.set_option('http-proxy', self.proxy)
         stream = session.streams(self.url).get('best')
         if stream:
             logger.info(f'\n{self.filename}\n{stream.url}')
@@ -207,11 +203,13 @@ class Twitcasting(LiveRecoder):
 
 
 async def run():
+    with open('config.json', 'r', encoding='utf-8') as f:
+        config = json.load(f)
     tasks = []
-    for item in config:
+    for item in config['user']:
         class_name = item['platform'].capitalize()
         task = asyncio.create_task(
-            coro=globals()[class_name](item).run(),
+            coro=globals()[class_name](config, item).run(),
             name=f"{item['platform']}_{item['name']}"
         )
         tasks.append(task)
