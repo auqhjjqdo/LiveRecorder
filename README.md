@@ -6,33 +6,27 @@
 
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Python](https://img.shields.io/badge/Python-3.8+-blue)
-[![QQ群](https://img.shields.io/badge/QQ群-花寄云璃社-brown)](https://jq.qq.com/?_wv=1027&k=71rz8gZy)
+[![QQ群](https://img.shields.io/badge/QQ群-花寄云璃社-yellow)](https://jq.qq.com/?_wv=1027&k=71rz8gZy)
+
+[![鹿乃资源站](https://img.shields.io/badge/鹿乃资源站-brown)](https://kanosuki.com)
+[![鹿乃信息站](https://img.shields.io/badge/鹿乃信息站-brown)](https://kano.fan)
+
 
 </div>
 
 ## 简介
 
-又一款直播录制脚本，基于强大的Streamlink实现多平台直播源录制，通过挖掘直播平台官方API以轮询方式实现直播开播检测，致力于用最少的代码实现最多的功能
+一款直播录制脚本，基于强大的Streamlink实现多平台直播源录制，通过挖掘直播平台官方API以轮询方式实现直播开播检测，致力于用最少的代码实现最多的功能
 
 ## 已支持平台
 
 - [x] Bilibili
 - [x] YouTube
 - [x] Twitch
-- [x] Twitcasting（未测试）
+- [x] Twitcasting（未测试直播检测可用性）
 - [ ] 更多平台欢迎PR
 
-## 安装
-
-### 下载
-
-<https://raw.githubusercontent.com/auqhjjqdo/LiveRecorder/main/live_recorder.py>
-
-### pip安装依赖
-
-```
-pip install streamlink ffmpeg-python httpx jsonpath loguru
-```
+## 使用
 
 ### 安装FFmpeg
 
@@ -40,23 +34,49 @@ pip install streamlink ffmpeg-python httpx jsonpath loguru
 
 根据你的运行平台安装对应版本，并添加环境变量确保全局调用
 
+### 下载
+
+当前支持Windows, Mac和Linux，请前往Release下载对应平台的可执行程序
+https://github.com/auqhjjqdo/LiveRecorder/releases
+
+其他平台请自行构建
+
 ## 配置
 
-### 直播录制配置
+配置文件存储于`config.json`，该文件位于可执行程序相同目录
 
-打开`live_recorder.py`，按照示例修改`config`变量，注意逗号、引号和缩进
+文件内容要求严格按照json语法，请在[在线json格式化网站](https://www.bejson.com/)校验后再修改
 
-| 字段       | 含义          | 可填内容                                                                | 备注                   |
-|----------|-------------|---------------------------------------------------------------------|----------------------|
-| platform | 直播平台        | `bilibili`<br/>`youtube`<br/>`twitch`<br/>`twitcasting`             | 必须为小写                |
-| id       | 对应平台的直播用户id | bilibili为直播间房间号<br/>youtube为频道id<br/>twitch为登录名<br/>twitcasting为用户名 | 参考示例格式<br/>直播url即可找到 |
-| name     | 自定义主播名      | 任意字符                                                                | 用于录制文件区分             |
+### 检测间隔
+
+`interval`的值为检测直播是否开播的轮询时间间隔，单位为秒
+
+不能添加引号，必须为整型或浮点型数字
 
 ### 代理配置
 
-修改`proxies`变量为代理地址，支持各种代理自定义，具体格式参照<https://www.python-httpx.org/advanced/#http-proxying>
+`proxy`的值为代理地址，支持http和socks5代理
 
-## 友链
+例如`http://127.0.0.1:7890`、`socks5://user:password@127.0.0.1:1080`、`{"all://": "http://localhost:1224"}`
 
-* [鹿乃资源站](https://kanosuki.com)
-* [鹿乃信息站](https://kano.fan)
+留空时默认自动检测系统代理
+
+具体格式参照<https://www.python-httpx.org/advanced/#http-proxying>
+
+### 直播录制配置
+
+按照示例修改`user`列表，注意逗号、引号和缩进
+
+| 字段       | 含义          | 可填内容                                                                | 备注                    |
+|----------|-------------|---------------------------------------------------------------------|-----------------------|
+| platform | 直播平台        | `bilibili`<br/>`youtube`<br/>`twitch`<br/>`twitcasting`             | 必须为小写                 |
+| id       | 对应平台的直播用户id | bilibili为直播间房间号<br/>youtube为频道id<br/>twitch为登录名<br/>twitcasting为用户名 | 参考示例格式<br/>直播url即可找到  |
+| name     | 自定义主播名      | 任意字符                                                                | 用于录制文件区分<br/>相同平台不可重复 |
+
+## 输出
+
+默认将直播录制输出到`output`文件夹
+
+文件名命名格式为`[年.月.日][平台]直播标题.mp4`，日期为UTC+8北京时间
+
+当文件名重名时（当天多次录制相同平台相同标题的直播）日期格式为`[年.月.日 时:分:秒]`

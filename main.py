@@ -26,6 +26,7 @@ class LiveRecoder:
         self.name = item['name']
         self.url = ''
         self.title = ''
+        self.live_time = ''
         self.filename = ''
 
     async def run(self):
@@ -33,8 +34,10 @@ class LiveRecoder:
         while True:
             try:
                 await getattr(self, self.platform)()
-            except Exception as error:
+            except httpx.RequestError as error:
                 logger.error(f'[{self.platform}][{self.name}]{repr(error)}')
+            except Exception as error:
+                logger.exception(f'[{self.platform}][{self.name}]{repr(error)}')
             await asyncio.sleep(self.interval)
 
     def get_client(self, config):
@@ -48,48 +51,47 @@ class LiveRecoder:
         return httpx.AsyncClient(**kwargs)
 
     def get_filename(self):
-        start_time = time.localtime()
-        datetime = time.strftime('%Y.%m.%d', start_time)
+        self.live_time = time.strftime('%Y.%m.%d %H.%M.%S')
         # 文件名去除特殊字符
         for i in '"*:<>?/\|':
             self.title = self.title.replace(i, ' ')
-        self.filename = f'[{datetime}][{self.platform}]{self.title}.mp4'
-        # 新建output目录
-        if not os.path.exists('output'):
-            os.mkdir('output')
-        # 当前目录或output目录存在同名文件时，文件名添加时间防止覆盖
-        if os.path.exists(self.filename) or os.path.exists(f'output/{self.filename}'):
-            self.filename = self.filename.replace(datetime, time.strftime('%Y.%m.%d_%H%M%S', start_time))
+        self.filename = f'[{self.live_time}][{self.platform}]{self.title}'
 
     async def start_record(self):
+        # 获取输出文件名
         self.get_filename()
-        logger.info(f'开始录制：{self.filename}')
+        logger.info(f'开始录制\n{self.filename}')
+
         # 添加到录制列表
         task = asyncio.current_task()
         recording.append(task.get_name())
-        logger.info(f'录制列表：{recording}')
+        recording_list = '\n'.join(recording)
+        logger.info(f'录制列表\n{recording_list}')
 
-        # 创建线程防止异步阻塞
-        stream_task = asyncio.create_task(asyncio.to_thread(self.stream_writer))
-        await asyncio.wait({stream_task})
+        # 新建output目录
+        if not os.path.exists('output'):
+            os.mkdir('output')
 
-        if os.path.exists(self.filename):
-            ffmpeg_task = asyncio.create_task(asyncio.to_thread(self.ffmpeg_encode))
-            await asyncio.wait({ffmpeg_task})
+        # 调用streamlink录制直播
+        await asyncio.to_thread(self.stream_writer)  # 创建线程防止异步阻塞
 
-        logger.info(f'停止录制：{self.filename}')
+        # ffmpeg转码
+        await asyncio.to_thread(self.ffmpeg_encode)
+
+        logger.info(f'停止录制\n{self.filename}')
         recording.remove(task.get_name())
 
     def stream_writer(self):
-        session = streamlink.Streamlink()
-        if self.proxy:
-            session.set_option('http-proxy', self.proxy)
-        stream = session.streams(self.url).get('best')
-        if stream:
-            logger.info(f'\n{self.filename}\n{stream.url}')
-            try:
+        try:
+            session = streamlink.Streamlink()
+            if self.proxy:
+                session.set_option('http-proxy', self.proxy)
+            stream = session.streams(self.url).get('best')
+            # stream为可用直播源的字典对象，可能为空
+            if stream:
+                logger.info(f'获取到直播流链接\n{self.filename}\n{stream.url}')
                 stream = stream.open()
-                with open(self.filename, 'ab') as output:
+                with open(f'output/{self.filename}.ts', 'ab') as output:
                     stream_iterator = chain([stream.read(8192)], iter(partial(stream.read, 8192), b''))
                     try:
                         for chunk in stream_iterator:
@@ -98,25 +100,36 @@ class LiveRecoder:
                             else:
                                 break
                     except OSError as error:
-                        logger.error(f'{self.filename}\n{error}')
+                        logger.exception(f'文件写入错误\n{self.filename}\n{error}')
                     finally:
                         stream.close()
-            except streamlink.StreamlinkError as error:
-                logger.error(f'{self.filename}\n{error}')
-        else:
-            logger.error(f'无直播源：{self.filename}')
+            else:
+                logger.error(f'无可用直播源\n{self.filename}')
+        except streamlink.StreamlinkError as error:
+            logger.exception(f'streamlink错误\n{self.filename}\n{error}')
 
     def ffmpeg_encode(self):
-        ffmpeg.input(self.filename).output(
-            f'output/{self.filename}',
-            f='mp4',
-            c='copy',
-            map_metadata='-1',
-            movflags='faststart'
-        ).run()
-        # 删除转码前的原始文件
-        if os.path.exists(f'output/{self.filename}'):
-            os.remove(self.filename)
+        output_file = f'output/{self.filename}.ts'
+        if os.path.exists(output_file):
+            # 文件名中的直播时间简化为日期
+            date_time = time.strftime('%Y.%m.%d', time.strptime(self.live_time, '%Y.%m.%d %H.%M.%S'))
+            filename = self.filename.replace(self.live_time, date_time)
+            # 输出文件名重复时重命名
+            if os.path.exists(f'output/{filename}'):
+                filename = self.filename
+            stdout, stderr = (ffmpeg.input(output_file).output(
+                f'output/{filename}.mp4',
+                f='mp4',
+                c='copy',
+                map_metadata='-1',
+                movflags='faststart'
+            ).run())
+            if stdout:
+                logger.info(stdout)
+            if stderr:
+                logger.exception(f'ffmpeg转码错误\n{self.filename}\n{stderr}')
+            # 删除转码前的原始文件
+            os.remove(output_file)
 
 
 class Bilibili(LiveRecoder):
