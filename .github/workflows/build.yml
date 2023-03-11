@@ -9,32 +9,22 @@ on:
       - "v*"
 
 jobs:
-  build:
+  desktop-build:
     strategy:
       matrix:
-        os: [ macos-latest, ubuntu-20.04, windows-latest ]
-    permissions:
-      contents: write
+        os: [ macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
-
     steps:
-      - name: Check-out repository
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-          cache: "pip"
-          cache-dependency-path: requirements.txt
-
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller
-          pip install -r requirements.txt
+          pip3 install --upgrade pip setuptools
+          pip3 install pyinstaller
+          pip3 install -r requirements.txt
 
-      - name: Build Executable
+      - name: Pyinstaller Build
         run: |
           pyinstaller main.spec --distpath .
 
@@ -47,6 +37,7 @@ jobs:
             LiveRecorder*
 
       - name: Create Archive
+        if: startsWith(github.ref_name, 'v')
         uses: thedoctor0/zip-release@main
         with:
           filename: LiveRecorder_${{ runner.os }}_${{ github.ref_name }}.zip
@@ -55,6 +46,61 @@ jobs:
             LiveRecorder*
 
       - name: Release
+        if: startsWith(github.ref_name, 'v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./*.zip
+
+  linux-build:
+    strategy:
+      matrix:
+        arch: [ amd64, arm64 ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Amd64 Build
+        if: ${{ matrix.arch == 'amd64' }}
+        run: |
+          pip3 install --upgrade pip setuptools
+          pip3 install pyinstaller staticx
+          pip3 install -r requirements.txt
+          pyinstaller main.spec
+          staticx dist/LiveRecorder LiveRecorder
+
+      - name: Arm64 Build
+        if: ${{ matrix.arch == 'arm64' }}
+        uses: pguyot/arm-runner-action@v2
+        with:
+          base_image: raspios_lite_arm64:latest
+          copy_artifact_path: LiveRecorder
+          commands: |
+            sudo apt install python3-pip -y
+            pip3 install --upgrade pip setuptools
+            pip3 install pyinstaller
+            pip3 install -r requirements.txt
+            pyinstaller main.spec --distpath .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: LiveRecorder_${{ runner.os }}_${{ matrix.arch }}_${{ github.ref_name }}
+          path: |
+            config.json
+            LiveRecorder*
+
+      - name: Create Archive
+        if: startsWith(github.ref_name, 'v')
+        uses: thedoctor0/zip-release@main
+        with:
+          filename: LiveRecorder_${{ runner.os }}_${{ matrix.arch }}_${{ github.ref_name }}.zip
+          path: |
+            config.json
+            LiveRecorder*
+
+      - name: Release
+        if: startsWith(github.ref_name, 'v')
         uses: softprops/action-gh-release@v1
         with:
           files: ./*.zip
