@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
   push:
     paths-ignore:
-      - "README.md"
+      - 'README.md'
     tags:
-      - "v*"
+      - 'v*'
 
 jobs:
   desktop-build:
@@ -18,6 +18,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
       - name: Install Dependencies
         run: |
           pip3 install --upgrade pip setuptools
@@ -25,8 +31,7 @@ jobs:
           pip3 install -r requirements.txt
 
       - name: Pyinstaller Build
-        run: |
-          pyinstaller main.spec --distpath .
+        run: pyinstaller build/main.spec --distpath .
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
@@ -60,27 +65,35 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          sudo add-apt-repository universe
+          sudo apt install libfuse2
+          wget -q -O appimage-builder-x86_64.AppImage https://github.com/AppImageCrafters/appimage-builder/releases/download/v1.1.0/appimage-builder-1.1.0-x86_64.AppImage
+          chmod +x appimage-builder-x86_64.AppImage
+          pip3 install wheel
+
       - name: Amd64 Build
         if: ${{ matrix.arch == 'amd64' }}
+#        uses: AppImageCrafters/build-appimage@master
+#        with:
+#          recipe: build/AppImageBuilder_amd64.yml
         run: |
-          pip3 install --upgrade pip setuptools
-          pip3 install pyinstaller staticx
-          pip3 install -r requirements.txt
-          pyinstaller main.spec
-          staticx dist/LiveRecorder LiveRecorder
+          ./appimage-builder-x86_64.AppImage --recipe build/AppImageBuilder_amd64.yml
 
       - name: Arm64 Build
         if: ${{ matrix.arch == 'arm64' }}
-        uses: pguyot/arm-runner-action@v2
-        with:
-          base_image: raspios_lite_arm64:latest
-          copy_artifact_path: LiveRecorder
-          commands: |
-            sudo apt install python3-pip -y
-            pip3 install --upgrade pip setuptools
-            pip3 install pyinstaller
-            pip3 install -r requirements.txt
-            pyinstaller main.spec --distpath .
+#        uses: AppImageCrafters/build-appimage@master
+#        with:
+#          recipe: build/AppImageBuilder_arm64.yml
+        run: |
+          ./appimage-builder-x86_64.AppImage --recipe build/AppImageBuilder_arm64.yml
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
