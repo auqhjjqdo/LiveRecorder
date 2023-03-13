@@ -109,16 +109,10 @@ class LiveRecoder:
             logger.exception(f'streamlink错误\n{self.filename}\n{error}')
 
     def ffmpeg_encode(self):
-        output_file = f'output/{self.filename}.ts'
-        if os.path.exists(output_file):
-            # 文件名中的直播时间简化为日期
-            date_time = time.strftime('%Y.%m.%d', time.strptime(self.live_time, '%Y.%m.%d %H.%M.%S'))
-            filename = self.filename.replace(self.live_time, date_time)
-            # 输出文件名重复时重命名
-            if os.path.exists(f'output/{filename}'):
-                filename = self.filename
-            stdout, stderr = (ffmpeg.input(output_file).output(
-                f'output/{filename}.mp4',
+        temp_file = f'output/{self.filename}.ts'
+        if os.path.exists(temp_file):
+            stdout, stderr = (ffmpeg.input(temp_file).output(
+                f'output/{self.filename}.mp4',
                 f='mp4',
                 c='copy',
                 map_metadata='-1',
@@ -126,10 +120,10 @@ class LiveRecoder:
             ).run())
             if stdout:
                 logger.info(stdout)
+                # 删除转码前的原始文件
+                os.remove(temp_file)
             if stderr:
                 logger.exception(f'ffmpeg转码错误\n{self.filename}\n{stderr}')
-            # 删除转码前的原始文件
-            os.remove(output_file)
 
 
 class Bilibili(LiveRecoder):
