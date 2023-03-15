@@ -5,7 +5,11 @@
         {
             "platform": "bilibili",
             "id": "15152878",
-            "name": "鹿乃"
+            "name": "鹿乃",
+            "headers": {
+                "Referer": "https://live.bilibili.com/"
+            },
+            "cookies": "SESSDATA=xxxxx; bili_jct=xxxxx"
         },
         {
             "platform": "bilibili",

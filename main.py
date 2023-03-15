@@ -3,6 +3,7 @@ import json
 import os
 import time
 from functools import partial
+from http.cookies import SimpleCookie
 from itertools import chain
 from urllib import request
 
@@ -17,13 +18,17 @@ recording = []
 
 
 class LiveRecoder:
-    def __init__(self, config, item):
-        self.proxy = request.getproxies().get('http')
-        self.client = self.get_client(config)
+    def __init__(self, config: dict, user: dict):
         self.interval = config['interval']
-        self.platform = item['platform']
-        self.id = item['id']
-        self.name = item['name']
+        self.proxy = config.get('proxy', request.getproxies().get('http'))
+
+        self.platform = user['platform']
+        self.id = user['id']
+        self.name = user.get('name', user['id'])
+        self.headers = user.get('headers', {'User-Agent': 'Android'})
+        self.cookies = self.get_cookies(user.get('cookies', ''))
+
+        self.client = self.get_client()
         self.url = ''
         self.title = ''
         self.live_time = ''
@@ -40,22 +45,32 @@ class LiveRecoder:
                 logger.exception(f'[{self.platform}][{self.name}]{repr(error)}')
             await asyncio.sleep(self.interval)
 
-    def get_client(self, config):
-        kwargs = {'headers': {'User-Agent': 'Android'}}
-        if config.get('proxy'):
-            self.proxy = config['proxy']
-            if 'socks5' in config['proxy']:
-                kwargs['transport'] = AsyncProxyTransport.from_url(config['proxy'])
-            else:
-                kwargs['proxies'] = self.proxy
+    def get_client(self):
+        kwargs = {
+            'headers': self.headers,
+            'cookies': self.cookies
+        }
+        if 'socks' in self.proxy:
+            kwargs['transport'] = AsyncProxyTransport.from_url(self.proxy)
+        else:
+            kwargs['proxies'] = self.proxy
         return httpx.AsyncClient(**kwargs)
+
+    @staticmethod
+    def get_cookies(cookies_str: str):
+        if cookies_str:
+            cookies = SimpleCookie()
+            cookies.load(cookies_str)
+            return {k: v.value for k, v in cookies.items()}
+        else:
+            return {}
 
     def get_filename(self):
         self.live_time = time.strftime('%Y.%m.%d %H.%M.%S')
         # 文件名去除特殊字符
         for i in '"*:<>?/\|':
             self.title = self.title.replace(i, ' ')
-        self.filename = f'[{self.live_time}][{self.platform}]{self.title}'
+        self.filename = f'[{self.live_time}][{self.platform}][{self.name}]{self.title}'
 
     async def start_record(self):
         # 获取输出文件名
@@ -83,9 +98,13 @@ class LiveRecoder:
 
     def stream_writer(self):
         try:
-            session = streamlink.Streamlink()
-            if self.proxy:
-                session.set_option('http-proxy', self.proxy)
+            session = streamlink.Streamlink(
+                options={
+                    'http-proxy': self.proxy,
+                    'http-headers': self.headers,
+                    'http-cookies': self.cookies
+                }
+            )
             stream = session.streams(self.url).get('best')
             # stream为可用直播源的字典对象，可能为空
             if stream:

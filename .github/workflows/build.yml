@@ -5,8 +5,8 @@ on:
   push:
     paths-ignore:
       - 'README.md'
-    tags:
-      - 'v*'
+#    tags:
+#      - 'v*'
 
 jobs:
   desktop-build:
