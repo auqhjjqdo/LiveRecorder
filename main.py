@@ -20,7 +20,7 @@ recording = []
 class LiveRecoder:
     def __init__(self, config: dict, user: dict):
         self.interval = config['interval']
-        self.proxy = config.get('proxy', request.getproxies().get('http'))
+        self.proxy = config.get('proxy')
 
         self.platform = user['platform']
         self.id = user['id']
@@ -50,10 +50,13 @@ class LiveRecoder:
             'headers': self.headers,
             'cookies': self.cookies
         }
-        if 'socks' in self.proxy:
-            kwargs['transport'] = AsyncProxyTransport.from_url(self.proxy)
+        if self.proxy:
+            if 'socks' in self.proxy:
+                kwargs['transport'] = AsyncProxyTransport.from_url(self.proxy)
+            else:
+                kwargs['proxies'] = self.proxy
         else:
-            kwargs['proxies'] = self.proxy
+            self.proxy = request.getproxies().get('http')
         return httpx.AsyncClient(**kwargs)
 
     @staticmethod
