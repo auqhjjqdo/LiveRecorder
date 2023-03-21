@@ -2,9 +2,9 @@ import asyncio
 import json
 import os
 import time
-from functools import partial
+from contextlib import closing
 from http.cookies import SimpleCookie
-from itertools import chain
+from pathlib import Path
 from urllib import request
 
 import ffmpeg
@@ -13,6 +13,9 @@ from httpx_socks import AsyncProxyTransport
 from jsonpath import jsonpath
 from loguru import logger
 import streamlink
+from streamlink_cli.main import open_stream
+from streamlink_cli.output import FileOutput
+from streamlink_cli.streamrunner import StreamRunner
 
 recording = []
 
@@ -109,22 +112,17 @@ class LiveRecoder:
                 }
             )
             stream = session.streams(self.url).get('best')
-            # stream为可用直播源的字典对象，可能为空
+            # stream为取最高清晰度的直播流，可能为空
             if stream:
                 logger.info(f'获取到直播流链接\n{self.filename}\n{stream.url}')
-                stream = stream.open()
-                with open(f'output/{self.filename}.ts', 'ab') as output:
-                    stream_iterator = chain([stream.read(8192)], iter(partial(stream.read, 8192), b''))
+                output = FileOutput(filename=Path(f'output/{self.filename}.ts'))
+                stream_fd, prebuffer = open_stream(stream)
+                with closing(output):
                     try:
-                        for chunk in stream_iterator:
-                            if chunk:
-                                output.write(chunk)
-                            else:
-                                break
+                        output.open()
+                        StreamRunner(stream_fd, output).run(prebuffer)
                     except OSError as error:
                         logger.exception(f'文件写入错误\n{self.filename}\n{error}')
-                    finally:
-                        stream.close()
             else:
                 logger.error(f'无可用直播源\n{self.filename}')
         except streamlink.StreamlinkError as error:

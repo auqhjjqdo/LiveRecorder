@@ -16,7 +16,7 @@
 
 ## 简介
 
-一款直播录制脚本，基于强大的Streamlink实现多平台直播源录制，通过挖掘直播平台官方API以轮询方式实现直播开播检测，致力于用最少的代码实现最多的功能
+一款直播录制脚本，基于强大的[Streamlink](https://streamlink.github.io)实现多平台直播源录制，通过挖掘直播平台官方API以轮询方式实现直播开播检测，致力于用最少的代码实现最多的功能
 
 ## 已支持平台
 
@@ -26,7 +26,7 @@
 - [x] Twitcasting
 - [ ] 更多平台欢迎PR
 
-（需streamlink支持，详见[streamlink插件文档](https://streamlink.github.io/plugins.html)）
+（需streamlink插件支持，详见[streamlink插件文档](https://streamlink.github.io/plugins.html)）
 
 ## 使用
 
