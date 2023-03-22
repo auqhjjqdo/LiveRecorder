@@ -1,5 +1,4 @@
 streamlink
-ffmpeg-python
 loguru
 httpx
 httpx-socks[asyncio]

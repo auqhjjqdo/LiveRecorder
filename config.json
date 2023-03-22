@@ -3,7 +3,7 @@
     "proxy": "http://127.0.0.1:7890",
     "user": [
         {
-            "platform": "bilibili",
+            "platform": "Bilibili",
             "id": "15152878",
             "name": "鹿乃",
             "headers": {
@@ -12,32 +12,32 @@
             "cookies": "SESSDATA=xxxxx; bili_jct=xxxxx"
         },
         {
-            "platform": "bilibili",
+            "platform": "Bilibili",
             "id": "25600815",
             "name": "MKLNtic"
         },
         {
-            "platform": "youtube",
+            "platform": "Youtube",
             "id": "UCShXNLMXCfstmWKH_q86B8w",
             "name": "斑比鹿乃"
         },
         {
-            "platform": "youtube",
+            "platform": "Youtube",
             "id": "UCfuz6xYbYFGsWWBi3SpJI1w",
             "name": "桜帆鹿乃"
         },
         {
-            "platform": "youtube",
+            "platform": "Youtube",
             "id": "UCN3M-Nwa-eaZuMhPb5c3Pww",
             "name": "MKLNtic"
         },
         {
-            "platform": "twitch",
+            "platform": "Twitch",
             "id": "kanotic_",
             "name": "桜帆鹿乃"
         },
         {
-            "platform": "twitcasting",
+            "platform": "Twitcasting",
             "id": "kano_2525",
             "name": "鹿乃"
         }

@@ -42,7 +42,21 @@
 
 [Release下载页面](https://github.com/auqhjjqdo/LiveRecorder/releases)
 
-其他平台请自行构建
+下载解压后修改配置，直接运行二进制文件即可
+
+### 源码运行
+
+在不支持的平台运行时可使用源码运行，安装好Python后在命令行输入以下命令即可
+
+```shell
+# 下载源码（没有git可以直接从release下载Source code）
+git clone https://github.com/auqhjjqdo/LiveRecorder.git
+cd LiveRecorder
+# 安装依赖
+python3 -m pip install -r requirements.txt
+# 源码运行
+python3 -m main.py
+```
 
 ## 配置
 
@@ -72,7 +86,7 @@
 
 | 字段       | 含义          | 可填内容                                                                | 是否必填 | 备注                          |
 |----------|-------------|---------------------------------------------------------------------|------|-----------------------------|
-| platform | 直播平台        | `bilibili`<br/>`youtube`<br/>`twitch`<br/>`twitcasting`             | 必填   | 必须为小写                       |
+| platform | 直播平台        | `Bilibili`<br/>`Youtube`<br/>`Twitch`<br/>`Twitcasting`             | 必填   | 必须为首字母大写                    |
 | id       | 对应平台的直播用户id | bilibili为直播间房间号<br/>youtube为频道id<br/>twitch为登录名<br/>twitcasting为用户名 | 必填   | 参考config文件示例格式<br/>直播网址即可找到 |
 | name     | 自定义主播名      | 任意字符                                                                | 非必填  | 用于录制文件区分<br/>未填写时默认使用id     |
 | headers  | HTTP 标头     | 参考[官方文档](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers) | 非必填  | 可用于部分需请求头验证的网站              |
@@ -99,7 +113,6 @@ YouTube的频道ID一般是由`UC`开头的一段字符，由于YouTube可以自
 
 默认将直播录制输出到`output`文件夹
 
-录制的临时文件为`.ts`流式传输文件格式，可用播放器打开查看，直播录制结束后会自动使用ffmpeg转换为`.mp4`格式，同时删除`.ts`
-文件，格式转换失败保存`.ts`文件以供备份
+输出文件的封装格式为`mpegts`，音视频编码格式为平台默认（一般为视频编码为`H.264`，音频编码为`AAC`），录制清晰度为最高画质
 
-文件名命名格式为`[年.月.日 时.分.秒][平台][主播名]直播标题.mp4`，日期时区为系统默认时区
+输出文件名命名格式为`[年.月.日 时.分.秒][平台][主播名]直播标题.mp4`，日期时区为系统默认时区

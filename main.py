@@ -1,23 +1,23 @@
 import asyncio
 import json
-import os
 import time
 from contextlib import closing
 from http.cookies import SimpleCookie
 from pathlib import Path
+from typing import Dict, Tuple
 from urllib import request
 
-import ffmpeg
 import httpx
 from httpx_socks import AsyncProxyTransport
 from jsonpath import jsonpath
 from loguru import logger
 import streamlink
+from streamlink.stream import StreamIO
 from streamlink_cli.main import open_stream
 from streamlink_cli.output import FileOutput
 from streamlink_cli.streamrunner import StreamRunner
 
-recording = []
+recording: Dict[str, Tuple[StreamIO, FileOutput]] = {}
 
 
 class LiveRecoder:
@@ -25,28 +25,29 @@ class LiveRecoder:
         self.interval = config['interval']
         self.proxy = config.get('proxy')
 
-        self.platform = user['platform']
         self.id = user['id']
-        self.name = user.get('name', user['id'])
-        self.headers = user.get('headers', {'User-Agent': 'Android'})
+        platform = user['platform']
+        name = user.get('name', self.id)
+        self.flag = f'[{platform}][{name}]'
+
+        self.headers = user.get('headers', {'User-Agent': 'Chrome'})
         self.cookies = self.get_cookies(user.get('cookies', ''))
 
         self.client = self.get_client()
-        self.url = ''
-        self.title = ''
-        self.live_time = ''
-        self.filename = ''
 
-    async def run(self):
-        logger.info(f'[{self.platform}][{self.name}]正在检测直播状态')
+    async def start(self):
+        logger.info(f'{self.flag}正在检测直播状态')
         while True:
             try:
-                await getattr(self, self.platform)()
+                await self.run()
             except httpx.RequestError as error:
-                logger.error(f'[{self.platform}][{self.name}]{repr(error)}')
+                logger.error(f'{self.flag}{repr(error)}')
             except Exception as error:
-                logger.exception(f'[{self.platform}][{self.name}]{repr(error)}')
+                logger.exception(f'{self.flag}{repr(error)}')
             await asyncio.sleep(self.interval)
+
+    async def run(self):
+        pass
 
     def get_client(self):
         kwargs = {
@@ -71,101 +72,85 @@ class LiveRecoder:
         else:
             return {}
 
-    def get_filename(self):
-        self.live_time = time.strftime('%Y.%m.%d %H.%M.%S')
-        # 文件名去除特殊字符
-        for i in '"*:<>?/\|':
-            self.title = self.title.replace(i, ' ')
-        self.filename = f'[{self.live_time}][{self.platform}][{self.name}]{self.title}'
+    def get_filename(self, title):
+        live_time = time.strftime('%Y.%m.%d %H.%M.%S')
+        # 文件名特殊字符转换为全角字符
+        char_dict = {
+            '"': '＂',
+            '*': '＊',
+            ':': '：',
+            '<': '＜',
+            '>': '＞',
+            '?': '？',
+            '/': '／',
+            '\\': '＼',
+            '|': '｜',
+        }
+        for half, full in char_dict.items():
+            title = title.replace(half, full)
+        filename = f'[{live_time}]{self.flag}{title}'
+        return filename
 
-    async def start_record(self):
+    async def start_record(self, url, title):
         # 获取输出文件名
-        self.get_filename()
-        logger.info(f'开始录制\n{self.filename}')
+        filename = self.get_filename(title)
 
-        # 添加到录制列表
-        task = asyncio.current_task()
-        recording.append(task.get_name())
-        recording_list = '\n'.join(recording)
-        logger.info(f'录制列表\n{recording_list}')
-
-        # 新建output目录
-        if not os.path.exists('output'):
-            os.mkdir('output')
-
+        logger.info(f'{self.flag}开始录制\n{url}\t{title}')
         # 调用streamlink录制直播
-        await asyncio.to_thread(self.stream_writer)  # 创建线程防止异步阻塞
+        await asyncio.to_thread(self.stream_writer, url, title, filename)  # 创建线程防止异步阻塞
+        logger.info(f'{self.flag}停止录制\n{url}\t{title}')
 
-        # ffmpeg转码
-        await asyncio.to_thread(self.ffmpeg_encode)
-
-        logger.info(f'停止录制\n{self.filename}')
-        recording.remove(task.get_name())
-
-    def stream_writer(self):
+    def stream_writer(self, url, title, filename):
         try:
             session = streamlink.Streamlink(
                 options={
                     'http-proxy': self.proxy,
                     'http-headers': self.headers,
-                    'http-cookies': self.cookies
+                    'http-cookies': self.cookies,
+                    'ffmpeg-verbose': True,
+                    'ffmpeg-fout': 'mpegts'
                 }
             )
-            stream = session.streams(self.url).get('best')
+            stream = session.streams(url).get('best')
             # stream为取最高清晰度的直播流，可能为空
             if stream:
-                logger.info(f'获取到直播流链接\n{self.filename}\n{stream.url}')
-                output = FileOutput(filename=Path(f'output/{self.filename}.ts'))
+                logger.info(f'{self.flag}获取到直播流链接\n{url}\t{title}\n{stream.url}')
+                output = FileOutput(filename=Path(f'output/{filename}.mp4'))
                 stream_fd, prebuffer = open_stream(stream)
                 with closing(output):
                     try:
+                        logger.info(f'{self.flag}正在录制\n{url}\t{title}')
                         output.open()
+                        recording[url] = (stream_fd, output)
                         StreamRunner(stream_fd, output).run(prebuffer)
+                        recording.pop(url)
                     except OSError as error:
-                        logger.exception(f'文件写入错误\n{self.filename}\n{error}')
+                        logger.exception(f'{self.flag}文件写入错误\n{url}\t{title}\n{error}')
             else:
-                logger.error(f'无可用直播源\n{self.filename}')
+                logger.error(f'{self.flag}无可用直播源\n{url}\t{title}')
         except streamlink.StreamlinkError as error:
-            logger.exception(f'streamlink错误\n{self.filename}\n{error}')
-
-    def ffmpeg_encode(self):
-        temp_file = f'output/{self.filename}.ts'
-        if os.path.exists(temp_file):
-            stdout, stderr = (ffmpeg.input(temp_file).output(
-                f'output/{self.filename}.mp4',
-                f='mp4',
-                c='copy',
-                map_metadata='-1',
-                movflags='faststart'
-            ).run())
-            if stdout:
-                logger.info(stdout)
-                # 删除转码前的原始文件
-                os.remove(temp_file)
-            if stderr:
-                logger.exception(f'ffmpeg转码错误\n{self.filename}\n{stderr}')
+            logger.exception(f'{self.flag}streamlink错误\n{url}\t{title}\n{error}')
 
 
 class Bilibili(LiveRecoder):
-    async def bilibili(self):
-        response = (await self.client.get(
-            url='https://api.live.bilibili.com/room/v1/Room/get_info',
-            params={'room_id': self.id}
-        )).json()
-        self.url = f'https://live.bilibili.com/{self.id}'
-        if response['data']['live_status'] == 1 and self.url not in recording:
-            self.title = response['data']['title']
-            asyncio.create_task(
-                self.start_record(),
-                name=self.url
-            )
+    async def run(self):
+        url = f'https://live.bilibili.com/{self.id}'
+        if url not in recording:
+            response = (await self.client.get(
+                url='https://api.live.bilibili.com/room/v1/Room/get_info',
+                params={'room_id': self.id}
+            )).json()
+            if response['data']['live_status'] == 1:
+                title = response['data']['title']
+                asyncio.create_task(self.start_record(url, title), name=url)
 
 
 class Youtube(LiveRecoder):
-    async def youtube(self):
+    async def run(self):
         response = (await self.client.get(
             url=f'https://m.youtube.com/channel/{self.id}/streams',
             headers={
+                'User-Agent': 'Android',
                 'accept-language': 'zh-CN',
                 'x-youtube-client-name': '2',
                 'x-youtube-client-version': '2.20220101.00.00',
@@ -179,54 +164,59 @@ class Youtube(LiveRecoder):
         )
         if living_list:
             for item in living_list:
-                self.url = f"https://www.youtube.com/watch?v={item['videoId']}"
-                self.title = item['headline']['runs'][0]['text']
-                if self.url not in recording:
-                    asyncio.create_task(self.start_record(), name=self.url)
+                url = f"https://www.youtube.com/watch?v={item['videoId']}"
+                title = item['headline']['runs'][0]['text']
+                if url not in recording:
+                    asyncio.create_task(self.start_record(url, title), name=url)
 
 
 class Twitch(LiveRecoder):
-    async def twitch(self):
-        response = (await self.client.post(
-            url='https://gql.twitch.tv/gql',
-            headers={'Client-Id': 'kimne78kx3ncx6brgo4mv6wki5h1ko'},
-            json=[{
-                'operationName': 'StreamMetadata',
-                'variables': {'channelLogin': self.id},
-                'extensions': {
-                    'persistedQuery': {
-                        'version': 1,
-                        'sha256Hash': 'a647c2a13599e5991e175155f798ca7f1ecddde73f7f341f39009c14dbf59962'
+    async def run(self):
+        url = f'https://www.twitch.tv/{self.id}'
+        if url not in recording:
+            response = (await self.client.post(
+                url='https://gql.twitch.tv/gql',
+                headers={'Client-Id': 'kimne78kx3ncx6brgo4mv6wki5h1ko'},
+                json=[{
+                    'operationName': 'StreamMetadata',
+                    'variables': {'channelLogin': self.id},
+                    'extensions': {
+                        'persistedQuery': {
+                            'version': 1,
+                            'sha256Hash': 'a647c2a13599e5991e175155f798ca7f1ecddde73f7f341f39009c14dbf59962'
+                        }
                     }
-                }
-            }]
-        )).json()
-        self.url = f'https://www.twitch.tv/{self.id}'
-        if response[0]['data']['user']['stream'] and self.url not in recording:
-            self.title = response[0]['data']['user']['lastBroadcast']['title']
-            asyncio.create_task(self.start_record(), name=self.url)
+                }]
+            )).json()
+            if response[0]['data']['user']['stream']:
+                title = response[0]['data']['user']['lastBroadcast']['title']
+                asyncio.create_task(self.start_record(url, title), name=url)
 
 
 class Twitcasting(LiveRecoder):
-    async def twitcasting(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.client.headers['Origin'] = 'https://twitcasting.tv/'
-        self.url = f'https://twitcasting.tv/{self.id}'
-        response = (await self.client.get(
-            url=f'https://frontendapi.twitcasting.tv/users/{self.id}/latest-movie'
-        )).json()
-        if response['movie']['is_on_live'] and self.url not in recording:
-            movie_id = response['movie']['id']
-            response = (await self.client.post(
-                url='https://twitcasting.tv/happytoken.php',
-                data={'movie_id': movie_id}
-            )).json()
-            token = response['token']
+
+    async def run(self):
+        url = f'https://twitcasting.tv/{self.id}'
+        if url not in recording:
             response = (await self.client.get(
-                url=f'https://frontendapi.twitcasting.tv/movies/{movie_id}/status/viewer',
-                params={'token': token}
+                url=f'https://frontendapi.twitcasting.tv/users/{self.id}/latest-movie'
             )).json()
-            self.title = response['movie']['title']
-            asyncio.create_task(self.start_record(), name=self.url)
+            if response['movie']['is_on_live']:
+                movie_id = response['movie']['id']
+                response = (await self.client.post(
+                    url='https://twitcasting.tv/happytoken.php',
+                    data={'movie_id': movie_id}
+                )).json()
+                token = response['token']
+                response = (await self.client.get(
+                    url=f'https://frontendapi.twitcasting.tv/movies/{movie_id}/status/viewer',
+                    params={'token': token}
+                )).json()
+                title = response['movie']['title']
+                asyncio.create_task(self.start_record(url, title), name=url)
 
 
 async def run():
@@ -234,14 +224,16 @@ async def run():
         config = json.load(f)
     tasks = []
     for item in config['user']:
-        class_name = item['platform'].capitalize()
-        task = asyncio.create_task(
-            coro=globals()[class_name](config, item).run(),
-            name=f"{item['platform']}_{item['name']}"
-        )
-        tasks.append(task)
-        await asyncio.sleep(1)
-    await asyncio.wait(tasks)
+        platform_class = globals()[item['platform']]
+        coro = platform_class(config, item).start()
+        tasks.append(asyncio.create_task(coro))
+    try:
+        await asyncio.wait(tasks)
+    except asyncio.CancelledError:
+        logger.warning('用户中断录制，正在关闭直播流')
+        for stream_fd, output in recording.copy().values():
+            stream_fd.close()
+            output.close()
 
 
 if __name__ == '__main__':
