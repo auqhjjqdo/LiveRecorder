@@ -41,9 +41,9 @@ class LiveRecoder:
             try:
                 await self.run()
             except httpx.RequestError as error:
-                logger.error(f'{self.flag}{repr(error)}')
+                logger.error(f'{self.flag}直播检测请求错误\n{repr(error)}')
             except Exception as error:
-                logger.exception(f'{self.flag}{repr(error)}')
+                logger.exception(f'{self.flag}直播检测未知错误\n{repr(error)}')
             await asyncio.sleep(self.interval)
 
     async def run(self):
@@ -104,13 +104,16 @@ class LiveRecoder:
         try:
             session = streamlink.Streamlink(
                 options={
-                    'http-proxy': self.proxy,
-                    'http-headers': self.headers,
-                    'http-cookies': self.cookies,
                     'ffmpeg-verbose': True,
                     'ffmpeg-fout': 'mpegts'
                 }
             )
+            if self.proxy:
+                session.set_option('http-proxy', self.proxy)
+            if self.headers:
+                session.set_option('http-headers', self.headers)
+            if self.cookies:
+                session.set_option('http-cookies', self.cookies)
             stream = session.streams(url).get('best')
             # stream为取最高清晰度的直播流，可能为空
             if stream:
@@ -130,6 +133,8 @@ class LiveRecoder:
                 logger.error(f'{self.flag}无可用直播源\n{url}\t{title}')
         except streamlink.StreamlinkError as error:
             logger.exception(f'{self.flag}streamlink错误\n{url}\t{title}\n{error}')
+        except Exception as error:
+            logger.exception(f'{self.flag}直播录制未知错误\n{url}\t{title}\n{error}')
 
 
 class Bilibili(LiveRecoder):
