@@ -43,6 +43,7 @@
 [Release下载页面](https://github.com/auqhjjqdo/LiveRecorder/releases)
 
 下载解压后修改配置，直接运行二进制文件即可
+Mac和Linux arm64版本未实际测试，如果打包出错欢迎提issue
 
 ### 源码运行
 
@@ -109,10 +110,10 @@ YouTube的频道ID一般是由`UC`开头的一段字符，由于YouTube可以自
 获取YouTube的频道ID可以在打开频道主页后，按F12打开开发者工具，在控制台输入`ytInitialData.metadata.channelMetadataRenderer.externalId`
 ，返回的字符即YouTube的频道ID
 
-## 输出
+## 输出文件
 
-默认将直播录制输出到`output`文件夹
+默认将直播录制文件输出到运行目录的`output`文件夹
 
-输出文件的封装格式为`mpegts`，音视频编码格式为平台默认（一般为视频编码为`H.264`，音频编码为`AAC`），录制清晰度为最高画质
+输出文件直接使用ffmpeg封装为`mp4`格式，音视频编码为直播平台直播流默认（一般视频编码为`H.264`，音频编码为`AAC`），录制清晰度为最高画质
 
 输出文件名命名格式为`[年.月.日 时.分.秒][平台][主播名]直播标题.mp4`，日期时区为系统默认时区
