@@ -51,6 +51,7 @@ class LiveRecoder:
 
     def get_client(self):
         kwargs = {
+            'timeout': 10,
             'headers': self.headers,
             'cookies': self.cookies
         }
