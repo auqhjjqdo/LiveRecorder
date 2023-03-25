@@ -3,6 +3,7 @@ import json
 import os
 import time
 from http.cookies import SimpleCookie
+from subprocess import Popen
 from typing import Dict, Tuple
 from urllib import request
 
@@ -17,7 +18,7 @@ from streamlink_cli.main import open_stream
 from streamlink_cli.output import FileOutput
 from streamlink_cli.streamrunner import StreamRunner
 
-recording: Dict[str, Tuple[StreamIO, FileOutput]] = {}
+recording: Dict[str, Tuple[StreamIO, FileOutput, Popen]] = {}
 
 
 class LiveRecoder:
@@ -103,6 +104,7 @@ class LiveRecoder:
         pipe = self.create_pipe(filename)
         # 调用streamlink录制直播
         await asyncio.to_thread(self.stream_writer, url, title, pipe)  # 创建线程防止异步阻塞
+        pipe.terminate()
         recording.pop(url, None)
         logger.info(f'{self.flag}停止录制\n{url}\t{title}')
 
@@ -139,7 +141,7 @@ class LiveRecoder:
                 try:
                     logger.info(f'{self.flag}正在录制\n{url}\t{title}')
                     output.open()
-                    recording[url] = (stream_fd, output)
+                    recording[url] = (stream_fd, output, pipe)
                     StreamRunner(stream_fd, output).run(prebuffer)
                 except BrokenPipeError as error:
                     logger.exception(f'{self.flag}管道损坏错误\n{url}\t{title}\n{error}')
@@ -254,9 +256,10 @@ async def run():
         await asyncio.wait(tasks)
     except asyncio.CancelledError:
         logger.warning('用户中断录制，正在关闭直播流')
-        for stream_fd, output in recording.copy().values():
+        for stream_fd, output, pipe in recording.copy().values():
             stream_fd.close()
             output.close()
+            pipe.terminate()
 
 
 if __name__ == '__main__':
