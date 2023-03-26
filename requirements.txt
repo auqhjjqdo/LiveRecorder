@@ -3,4 +3,4 @@ ffmpeg-python
 loguru
 httpx
 httpx-socks[asyncio]
-jsonpath
+jsonpath-ng

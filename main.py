@@ -10,7 +10,7 @@ from urllib import request
 import ffmpeg
 import httpx
 from httpx_socks import AsyncProxyTransport
-from jsonpath import jsonpath
+from jsonpath_ng.ext import parse
 from loguru import logger
 import streamlink
 from streamlink.stream import StreamIO
@@ -183,12 +183,9 @@ class Youtube(LiveRecoder):
             },
             params={'pbj': 1}
         )).json()
-        living_list = jsonpath(
-            response,
-            "$.response.contents..[?(@.thumbnailOverlays.0.thumbnailOverlayTimeStatusRenderer.style=='LIVE')]"
-        )
-        if living_list:
-            for item in living_list:
+        jsonpath = parse('$..videoWithContextRenderer').find(response)
+        for item in [match.value for match in jsonpath]:
+            if 'LIVE' in json.dumps(item):
                 url = f"https://www.youtube.com/watch?v={item['videoId']}"
                 title = item['headline']['runs'][0]['text']
                 if url not in recording:
