@@ -53,6 +53,7 @@ class LiveRecoder:
     def get_client(self):
         kwargs = {
             'timeout': 10,
+            'limits': httpx.Limits(max_keepalive_connections=100, keepalive_expiry=None),
             'headers': self.headers,
             'cookies': self.cookies
         }
