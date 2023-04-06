@@ -134,6 +134,9 @@ class LiveRecoder:
             for arg in ('proxy', 'headers', 'cookies'):
                 if attr := getattr(self, arg):
                     session.set_option(f'http-{arg}', attr)
+            # 添加Twitch跳过广告插件选项
+            if 'twitch' in url:
+                session.set_plugin_option('twitch', 'disable-ads', True)
             # stream为取最高清晰度的直播流，可能为空
             if stream := session.streams(url).get('best'):
                 logger.info(f'{self.flag}获取到直播流链接\n{url}\t{title}\n{stream.url}')
