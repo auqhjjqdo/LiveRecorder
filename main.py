@@ -64,7 +64,7 @@ class LiveRecoder:
                 kwargs['proxies'] = self.proxy
         else:
             self.proxy = request.getproxies().get('http')
-        return httpx.AsyncClient(**kwargs)
+        return httpx.AsyncClient(http2=True, **kwargs)
 
     @staticmethod
     def get_cookies(cookies_str: str):
