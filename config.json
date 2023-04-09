@@ -1,45 +1,45 @@
 {
-    "interval": 10,
-    "proxy": "http://127.0.0.1:7890",
-    "user": [
-        {
-            "platform": "Bilibili",
-            "id": "15152878",
-            "name": "鹿乃",
-            "headers": {
-                "Referer": "https://live.bilibili.com/"
-            },
-            "cookies": "SESSDATA=xxxxx; bili_jct=xxxxx"
-        },
-        {
-            "platform": "Bilibili",
-            "id": "25600815",
-            "name": "MKLNtic"
-        },
-        {
-            "platform": "Youtube",
-            "id": "UCShXNLMXCfstmWKH_q86B8w",
-            "name": "斑比鹿乃"
-        },
-        {
-            "platform": "Youtube",
-            "id": "UCfuz6xYbYFGsWWBi3SpJI1w",
-            "name": "桜帆鹿乃"
-        },
-        {
-            "platform": "Youtube",
-            "id": "UCN3M-Nwa-eaZuMhPb5c3Pww",
-            "name": "MKLNtic"
-        },
-        {
-            "platform": "Twitch",
-            "id": "kanotic_",
-            "name": "桜帆鹿乃"
-        },
-        {
-            "platform": "Twitcasting",
-            "id": "kano_2525",
-            "name": "鹿乃"
-        }
-    ]
+  "proxy": "http://127.0.0.1:7890",
+  "user": [
+    {
+      "platform": "Bilibili",
+      "id": "15152878",
+      "name": "鹿乃",
+      "interval": 10,
+      "headers": {
+        "Referer": "https://live.bilibili.com/"
+      },
+      "cookies": "SESSDATA=xxxxx; bili_jct=xxxxx"
+    },
+    {
+      "platform": "Bilibili",
+      "id": "25600815",
+      "name": "MKLNtic"
+    },
+    {
+      "platform": "Youtube",
+      "id": "UCShXNLMXCfstmWKH_q86B8w",
+      "name": "斑比鹿乃"
+    },
+    {
+      "platform": "Youtube",
+      "id": "UCfuz6xYbYFGsWWBi3SpJI1w",
+      "name": "桜帆鹿乃"
+    },
+    {
+      "platform": "Youtube",
+      "id": "UCN3M-Nwa-eaZuMhPb5c3Pww",
+      "name": "MKLNtic"
+    },
+    {
+      "platform": "Twitch",
+      "id": "kanotic_",
+      "name": "桜帆鹿乃"
+    },
+    {
+      "platform": "Twitcasting",
+      "id": "kano_2525",
+      "name": "鹿乃"
+    }
+  ]
 }

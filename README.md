@@ -43,6 +43,7 @@
 [Release下载页面](https://github.com/auqhjjqdo/LiveRecorder/releases)
 
 下载解压后修改配置，直接运行二进制文件即可
+
 Mac和Linux arm64版本未实际测试，如果打包出错欢迎提issue
 
 ### 源码运行
@@ -65,12 +66,6 @@ python3 -m main.py
 
 文件内容要求严格按照json语法，请前往[在线json格式化网站](https://www.bejson.com/)校验后再修改
 
-### 检测间隔
-
-`interval`的值为检测直播是否开播的轮询时间间隔，单位为秒
-
-不能添加引号，必须为整型或浮点型数字
-
 ### 代理配置
 
 `proxy`的值为代理地址，支持http和socks代理，格式为`protocol://[user:password@]ip:port`
@@ -90,6 +85,7 @@ python3 -m main.py
 | platform | 直播平台        | `Bilibili`<br/>`Youtube`<br/>`Twitch`<br/>`Twitcasting`             | 必填   | 必须为首字母大写                    |
 | id       | 对应平台的直播用户id | bilibili为直播间房间号<br/>youtube为频道id<br/>twitch为登录名<br/>twitcasting为用户名 | 必填   | 参考config文件示例格式<br/>直播网址即可找到 |
 | name     | 自定义主播名      | 任意字符                                                                | 非必填  | 用于录制文件区分<br/>未填写时默认使用id     |
+| interval | 检测间隔        | 任意整数或小数                                                             | 非必填  | 默认检测间隔为10秒                  |
 | headers  | HTTP 标头     | 参考[官方文档](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers) | 非必填  | 可用于部分需请求头验证的网站              |
 | cookies  | HTTP Cookie | `key=value`<br/>多个cookie使用`;`分隔                                     | 非必填  | 可用于录制需登录观看的直播               |
 
