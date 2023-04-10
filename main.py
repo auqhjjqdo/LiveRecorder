@@ -41,6 +41,9 @@ class LiveRecoder:
         while True:
             try:
                 await self.run()
+            except httpx.ProtocolError:
+                await self.client.aclose()
+                self.client = self.get_client()
             except httpx.RequestError as error:
                 logger.error(f'{self.flag}直播检测请求错误\n{repr(error)}')
             except Exception as error:
@@ -52,8 +55,8 @@ class LiveRecoder:
 
     def get_client(self):
         kwargs = {
-            'timeout': 10,
-            'limits': httpx.Limits(max_keepalive_connections=100, keepalive_expiry=None),
+            'timeout': self.interval,
+            'limits': httpx.Limits(max_keepalive_connections=100, keepalive_expiry=self.interval * 2),
             'headers': self.headers,
             'cookies': self.cookies
         }
