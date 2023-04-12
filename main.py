@@ -188,26 +188,35 @@ class Bilibili(LiveRecoder):
 class Youtube(LiveRecoder):
     async def run(self):
         if response := await self.request(
-                method='GET',
-                url=f'https://m.youtube.com/channel/{self.id}/streams',
-                headers={
-                    'User-Agent': 'Android',
-                    'accept-language': 'zh-CN',
-                    'x-youtube-client-name': '2',
-                    'x-youtube-client-version': '2.20220101.00.00',
-                    'x-youtube-time-zone': 'Asia/Shanghai',
+                method='POST',
+                url=f'https://www.youtube.com/youtubei/v1/browse',
+                params={
+                    'key': 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8',
+                    'prettyPrint': False
                 },
-                params={'pbj': 1}
+                json={
+                    'context': {
+                        'client': {
+                            'hl': 'zh-CN',
+                            'clientName': 'WEB',
+                            'clientVersion': '2.20230101.00.00',
+                            'timeZone': 'Asia/Shanghai'
+                        }
+                    },
+                    'browseId': self.id,
+                    'params': 'EghmZWF0dXJlZPIGBAoCMgA%3D'
+                }
         ):
             response = response.json()
-            jsonpath = parse('$..videoWithContextRenderer').find(response)
+            jsonpath = parse('$..channelFeaturedContentRenderer').find(response)
             for match in jsonpath:
-                item = match.value
-                if 'LIVE' in json.dumps(item):
-                    url = f"https://www.youtube.com/watch?v={item['videoId']}"
-                    title = item['headline']['runs'][0]['text']
-                    if url not in recording:
-                        asyncio.create_task(self.run_record(url, title), name=url)
+                for item in match.value['items']:
+                    video = item['videoRenderer']
+                    if '"style": "LIVE"' in json.dumps(video):
+                        url = f"https://www.youtube.com/watch?v={video['videoId']}"
+                        title = video['title']['runs'][0]['text']
+                        if url not in recording:
+                            asyncio.create_task(self.run_record(url, title), name=url)
 
 
 class Twitch(LiveRecoder):
