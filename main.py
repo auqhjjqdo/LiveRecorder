@@ -41,17 +41,23 @@ class LiveRecoder:
         while True:
             try:
                 await self.run()
-            except httpx.ProtocolError:
-                await self.client.aclose()
-                self.client = self.get_client()
-            except httpx.RequestError as error:
-                logger.error(f'{self.flag}直播检测请求错误\n{repr(error)}')
             except Exception as error:
                 logger.exception(f'{self.flag}直播检测未知错误\n{repr(error)}')
             await asyncio.sleep(self.interval)
 
     async def run(self):
         pass
+
+    async def request(self, method, url, **kwargs):
+        try:
+            response = await self.client.request(method, url, **kwargs)
+            response.raise_for_status()
+            return response
+        except httpx.ProtocolError:
+            await self.client.aclose()
+            self.client = self.get_client()
+        except httpx.HTTPError as error:
+            logger.error(f'{self.flag}直播检测请求错误\n{repr(error)}')
 
     def get_client(self):
         kwargs = {
@@ -168,84 +174,92 @@ class Bilibili(LiveRecoder):
     async def run(self):
         url = f'https://live.bilibili.com/{self.id}'
         if url not in recording:
-            response = (await self.client.get(
-                url='https://api.live.bilibili.com/room/v1/Room/get_info',
-                params={'room_id': self.id}
-            )).json()
-            if response['data']['live_status'] == 1:
-                title = response['data']['title']
-                await self.run_record(url, title)
+            if response := await self.request(
+                    method='GET',
+                    url='https://api.live.bilibili.com/room/v1/Room/get_info',
+                    params={'room_id': self.id}
+            ):
+                response = response.json()
+                if response['data']['live_status'] == 1:
+                    title = response['data']['title']
+                    await self.run_record(url, title)
 
 
 class Youtube(LiveRecoder):
     async def run(self):
-        response = (await self.client.get(
-            url=f'https://m.youtube.com/channel/{self.id}/streams',
-            headers={
-                'User-Agent': 'Android',
-                'accept-language': 'zh-CN',
-                'x-youtube-client-name': '2',
-                'x-youtube-client-version': '2.20220101.00.00',
-                'x-youtube-time-zone': 'Asia/Shanghai',
-            },
-            params={'pbj': 1}
-        )).json()
-        jsonpath = parse('$..videoWithContextRenderer').find(response)
-        for item in [match.value for match in jsonpath]:
-            if 'LIVE' in json.dumps(item):
-                url = f"https://www.youtube.com/watch?v={item['videoId']}"
-                title = item['headline']['runs'][0]['text']
-                if url not in recording:
-                    asyncio.create_task(self.run_record(url, title), name=url)
+        if response := await self.request(
+                method='GET',
+                url=f'https://m.youtube.com/channel/{self.id}/streams',
+                headers={
+                    'User-Agent': 'Android',
+                    'accept-language': 'zh-CN',
+                    'x-youtube-client-name': '2',
+                    'x-youtube-client-version': '2.20220101.00.00',
+                    'x-youtube-time-zone': 'Asia/Shanghai',
+                },
+                params={'pbj': 1}
+        ):
+            response = response.json()
+            jsonpath = parse('$..videoWithContextRenderer').find(response)
+            for match in jsonpath:
+                item = match.value
+                if 'LIVE' in json.dumps(item):
+                    url = f"https://www.youtube.com/watch?v={item['videoId']}"
+                    title = item['headline']['runs'][0]['text']
+                    if url not in recording:
+                        asyncio.create_task(self.run_record(url, title), name=url)
 
 
 class Twitch(LiveRecoder):
     async def run(self):
         url = f'https://www.twitch.tv/{self.id}'
         if url not in recording:
-            response = (await self.client.post(
-                url='https://gql.twitch.tv/gql',
-                headers={'Client-Id': 'kimne78kx3ncx6brgo4mv6wki5h1ko'},
-                json=[{
-                    'operationName': 'StreamMetadata',
-                    'variables': {'channelLogin': self.id},
-                    'extensions': {
-                        'persistedQuery': {
-                            'version': 1,
-                            'sha256Hash': 'a647c2a13599e5991e175155f798ca7f1ecddde73f7f341f39009c14dbf59962'
+            if response := await self.request(
+                    method='POST',
+                    url='https://gql.twitch.tv/gql',
+                    headers={'Client-Id': 'kimne78kx3ncx6brgo4mv6wki5h1ko'},
+                    json=[{
+                        'operationName': 'StreamMetadata',
+                        'variables': {'channelLogin': self.id},
+                        'extensions': {
+                            'persistedQuery': {
+                                'version': 1,
+                                'sha256Hash': 'a647c2a13599e5991e175155f798ca7f1ecddde73f7f341f39009c14dbf59962'
+                            }
                         }
-                    }
-                }]
-            )).json()
-            if response[0]['data']['user']['stream']:
-                title = response[0]['data']['user']['lastBroadcast']['title']
-                await self.run_record(url, title)
+                    }]
+            ):
+                response = response.json()
+                if response[0]['data']['user']['stream']:
+                    title = response[0]['data']['user']['lastBroadcast']['title']
+                    await self.run_record(url, title)
 
 
 class Twitcasting(LiveRecoder):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.client.headers['Origin'] = 'https://twitcasting.tv/'
-
     async def run(self):
         url = f'https://twitcasting.tv/{self.id}'
         if url not in recording:
-            response = (await self.client.get(
-                url=f'https://frontendapi.twitcasting.tv/users/{self.id}/latest-movie'
-            )).json()
-            if response['movie']['is_on_live']:
-                movie_id = response['movie']['id']
-                response = (await self.client.post(
-                    url='https://twitcasting.tv/happytoken.php',
-                    data={'movie_id': movie_id}
-                )).json()
-                token = response['token']
-                response = (await self.client.get(
-                    url=f'https://frontendapi.twitcasting.tv/movies/{movie_id}/status/viewer',
-                    params={'token': token}
-                )).json()
-                title = response['movie']['title']
-                await self.run_record(url, title)
+            self.client.headers['Origin'] = 'https://twitcasting.tv/'
+            if response := await self.request(
+                    method='GET',
+                    url=f'https://frontendapi.twitcasting.tv/users/{self.id}/latest-movie'
+            ):
+                response = response.json()
+                if response['movie']['is_on_live']:
+                    movie_id = response['movie']['id']
+                    response = (await self.request(
+                        method='POST',
+                        url='https://twitcasting.tv/happytoken.php',
+                        data={'movie_id': movie_id}
+                    )).json()
+                    token = response['token']
+                    response = (await self.request(
+                        method='GET',
+                        url=f'https://frontendapi.twitcasting.tv/movies/{movie_id}/status/viewer',
+                        params={'token': token}
+                    )).json()
+                    title = response['movie']['title']
+                    await self.run_record(url, title)
 
 
 async def run():
