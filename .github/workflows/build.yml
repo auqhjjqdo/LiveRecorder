@@ -27,7 +27,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip3 install --upgrade pip setuptools
-          pip3 install pyinstaller
+          pip3 install pyinstaller wheel
           pip3 install -r requirements.txt
 
       - name: Pyinstaller Build
