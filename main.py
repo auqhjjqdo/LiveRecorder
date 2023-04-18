@@ -1,11 +1,14 @@
 import asyncio
+import hashlib
 import json
 import os
+import re
 import time
 from http.cookies import SimpleCookie
 from subprocess import Popen
 from typing import Dict, Tuple
 from urllib import request
+from urllib.parse import urlparse
 
 import ffmpeg
 import httpx
@@ -251,10 +254,17 @@ class Twitcasting(LiveRecoder):
     async def run(self):
         url = f'https://twitcasting.tv/{self.id}'
         if url not in recording:
-            self.client.headers['Origin'] = 'https://twitcasting.tv/'
+            response = await self.request(method='GET', url=url)
+            session_id = re.search('web-authorize-session-id&quot;:&quot;(.*)&quot;', response.text).group(1)
+            timestamp = time.time()
+            check_url = f'https://frontendapi.twitcasting.tv/users/{self.id}/latest-movie?__n={int(timestamp * 1000)}'
             response = (await self.request(
                 method='GET',
-                url=f'https://frontendapi.twitcasting.tv/users/{self.id}/latest-movie'
+                url=check_url,
+                headers={
+                    'x-web-authorizekey': self.generate_hash(check_url, session_id, int(timestamp)),
+                    'x-web-sessionid': session_id
+                }
             )).json()
             if response['movie']['is_on_live']:
                 movie_id = response['movie']['id']
@@ -271,6 +281,13 @@ class Twitcasting(LiveRecoder):
                 )).json()
                 title = response['movie']['title']
                 await self.run_record(url, title)
+
+    @staticmethod
+    def generate_hash(url, session_id, timestamp):
+        u = urlparse(url)
+        data = f'nor8eeprd8ose3k6{timestamp}GET{u.path}?{u.query}{session_id}'
+        result = hashlib.sha256(data.encode()).digest().hex()
+        return f'{timestamp}.{result}'
 
 
 async def run():
