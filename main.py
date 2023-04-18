@@ -134,10 +134,10 @@ class LiveRecoder:
             .input('pipe:')
             .output(
                 f'output/{filename}.{self.format}',
-                loglevel='warning',
                 codec='copy',
                 map_metadata=-1,
             )
+            .global_args('-hide_banner')
             .run_async(pipe_stdin=True)
         )
         return pipe
@@ -166,15 +166,15 @@ class LiveRecoder:
                     recording[url] = (stream_fd, output, pipe)
                     StreamRunner(stream_fd, output).run(prebuffer)
                 except BrokenPipeError as error:
-                    logger.exception(f'{self.flag}管道损坏错误\n{url}\t{title}\n{error}')
+                    logger.error(f'{self.flag}管道损坏错误\n{url}\t{title}\n{error}')
                 except OSError as error:
-                    logger.exception(f'{self.flag}文件写入错误\n{url}\t{title}\n{error}')
+                    logger.error(f'{self.flag}文件写入错误\n{url}\t{title}\n{error}')
                 finally:
                     output.close()
             else:
                 logger.error(f'{self.flag}无可用直播源\n{url}\t{title}')
         except streamlink.StreamlinkError as error:
-            logger.exception(f'{self.flag}streamlink错误\n{url}\t{title}\n{error}')
+            logger.error(f'{self.flag}streamlink错误\n{url}\t{title}\n{error}')
         except Exception as error:
             logger.exception(f'{self.flag}直播录制未知错误\n{url}\t{title}\n{error}')
 
