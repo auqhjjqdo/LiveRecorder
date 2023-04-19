@@ -27,7 +27,7 @@ recording: Dict[str, Tuple[StreamIO, FileOutput, Popen]] = {}
 class LiveRecoder:
     def __init__(self, config: dict, user: dict):
         self.proxy = config.get('proxy')
-        self.format = config.get('format', 'mp4')
+        self.format = config.get('format', 'ts')
 
         self.id = user['id']
         platform = user['platform']
