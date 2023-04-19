@@ -4,6 +4,7 @@ import json
 import os
 import re
 import time
+import urllib
 from http.cookies import SimpleCookie
 from subprocess import Popen
 from typing import Dict, Tuple
@@ -16,7 +17,7 @@ from httpx_socks import AsyncProxyTransport
 from jsonpath_ng.ext import parse
 from loguru import logger
 import streamlink
-from streamlink.stream import StreamIO
+from streamlink.stream import StreamIO, HTTPStream
 from streamlink_cli.main import open_stream
 from streamlink_cli.output import FileOutput
 from streamlink_cli.streamrunner import StreamRunner
@@ -155,8 +156,12 @@ class LiveRecoder:
             # 添加Twitch跳过广告插件选项
             if 'twitch' in url:
                 session.set_plugin_option('twitch', 'disable-ads', True)
+            if 'douyu' in url:
+                stream = HTTPStream(session, url)
+            else:
+                stream = session.streams(url).get('best')
             # stream为取最高清晰度的直播流，可能为空
-            if stream := session.streams(url).get('best'):
+            if stream:
                 logger.info(f'{self.flag}获取到直播流链接\n{url}\t{title}\n{stream.url}')
                 output = FileOutput(fd=pipe.stdin)
                 stream_fd, prebuffer = open_stream(stream)
@@ -190,6 +195,30 @@ class Bilibili(LiveRecoder):
             )).json()
             if response['data']['live_status'] == 1:
                 title = response['data']['title']
+                await self.run_record(url, title)
+
+
+class Douyu(LiveRecoder):
+    async def run(self):
+        url = f'https://www.douyu.com/{self.id}'
+        if url not in recording:
+            params = {
+                'aid': 'wp',
+                'client_sys': 'wp',
+                'time': int(time.time()),
+            }
+            params['auth'] = hashlib.md5(
+                f'room/{self.id}?{urllib.parse.urlencode(params)}zNzMV1y4EMxOHS6I5WKm'.encode()
+            ).hexdigest()
+            response = (await self.request(
+                method='GET',
+                url=f'http://www.douyutv.com/api/v1/room/{self.id}',
+                params=params
+            )).json()
+            if response['data']['show_status'] == '1':
+                title = response['data']['room_name']
+                rtmp_id = response['data']['rtmp_live'].split('.')[0]
+                url = f'http://hw-tct.douyucdn.cn/live/{rtmp_id}_4000.flv'
                 await self.run_record(url, title)
 
 

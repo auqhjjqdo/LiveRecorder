@@ -21,13 +21,12 @@
 
 ## 已支持平台
 
-- [x] Bilibili
+- [x] 哔哩哔哩
+- [x] 斗鱼
 - [x] YouTube
 - [x] Twitch
-- [x] Twitcasting
+- [x] TwitCasting
 - [ ] 更多平台欢迎PR
-
-（需streamlink插件支持，详见[streamlink插件文档](https://streamlink.github.io/plugins.html)）
 
 ## 使用
 
@@ -91,8 +90,8 @@ python3 -m main.py
 
 | 字段       | 含义          | 可填内容                                                                | 是否必填 | 备注                          |
 |----------|-------------|---------------------------------------------------------------------|------|-----------------------------|
-| platform | 直播平台        | `Bilibili`<br/>`Youtube`<br/>`Twitch`<br/>`Twitcasting`             | 必填   | 必须为首字母大写                    |
-| id       | 对应平台的直播用户id | bilibili为直播间房间号<br/>youtube为频道id<br/>twitch为登录名<br/>twitcasting为用户名 | 必填   | 参考config文件示例格式<br/>直播网址即可找到 |
+| platform | 直播平台        | `Bilibili`<br/>`Douyu`<br/>`Youtube`<br/>`Twitch`<br/>`Twitcasting` | 必填   | 必须为首字母大写                    |
+| id       | 对应平台的直播用户id | 哔哩哔哩、斗鱼为直播间房间号<br/>youtube为频道id<br/>twitch为登录名<br/>twitcasting为用户名  | 必填   | 参考config文件示例格式<br/>直播网址即可找到 |
 | name     | 自定义主播名      | 任意字符                                                                | 非必填  | 用于录制文件区分<br/>未填写时默认使用id     |
 | interval | 检测间隔        | 任意整数或小数                                                             | 非必填  | 默认检测间隔为10秒                  |
 | headers  | HTTP 标头     | 参考[官方文档](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers) | 非必填  | 可用于部分需请求头验证的网站              |
