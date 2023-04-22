@@ -285,19 +285,11 @@ class Twitcasting(LiveRecoder):
                 }
             )).json()
             if response['movie']['live']:
-                movie_id = response['movie']['id']
-                response = (await self.request(
-                    method='POST',
-                    url='https://twitcasting.tv/happytoken.php',
-                    data={'movie_id': movie_id}
-                )).json()
-                token = response['token']
                 response = (await self.request(
                     method='GET',
-                    url=f'https://frontendapi.twitcasting.tv/movies/{movie_id}/status/viewer',
-                    params={'token': token}
-                )).json()
-                title = response['movie']['title']
+                    url=url
+                )).text
+                title = re.search('<meta name="twitter:title" content="(.*?)">', response).group(1)
                 await self.run_record(url, title)
 
 
