@@ -65,7 +65,7 @@ class LiveRecoder:
         except httpx.HTTPStatusError as error:
             raise ConnectionError(f'{self.flag}直播检测请求状态码错误\n{error}\n{response.text}')
         except httpx.HTTPError as error:
-            raise ConnectionError(f'{self.flag}直播检测请求未知错误\n{error}')
+            raise ConnectionError(f'{self.flag}直播检测请求错误\n{repr(error)}')
 
     def get_client(self):
         return httpx.AsyncClient(
