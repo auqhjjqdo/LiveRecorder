@@ -1,6 +1,7 @@
 streamlink
 ffmpeg-python
 loguru
-httpx[http2]
-httpx-socks[asyncio]
+httpx
+h2
+socksio
 jsonpath-ng
