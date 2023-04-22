@@ -74,7 +74,8 @@ class LiveRecoder:
             cookies=self.cookies,
             timeout=self.interval,
             proxies=self.proxy,
-            limits=httpx.Limits(max_keepalive_connections=100, keepalive_expiry=self.interval * 2)
+            limits=httpx.Limits(max_keepalive_connections=100, keepalive_expiry=self.interval * 2),
+            transport=httpx.AsyncHTTPTransport(retries=3)
         )
 
     @staticmethod
