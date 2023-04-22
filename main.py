@@ -276,19 +276,15 @@ class Twitcasting(LiveRecoder):
     async def run(self):
         url = f'https://twitcasting.tv/{self.id}'
         if url not in recording:
-            response = await self.request(method='GET', url=url)
-            session_id = re.search('web-authorize-session-id&quot;:&quot;(.*)&quot;', response.text).group(1)
-            timestamp = time.time()
-            check_url = f'https://frontendapi.twitcasting.tv/users/{self.id}/latest-movie?__n={int(timestamp * 1000)}'
             response = (await self.request(
                 method='GET',
-                url=check_url,
-                headers={
-                    'x-web-authorizekey': self.generate_hash(check_url, session_id, int(timestamp)),
-                    'x-web-sessionid': session_id
+                url='https://twitcasting.tv/streamserver.php',
+                params={
+                    'target': self.id,
+                    'mode': 'client'
                 }
             )).json()
-            if response['movie']['is_on_live']:
+            if response['movie']['live']:
                 movie_id = response['movie']['id']
                 response = (await self.request(
                     method='POST',
@@ -303,13 +299,6 @@ class Twitcasting(LiveRecoder):
                 )).json()
                 title = response['movie']['title']
                 await self.run_record(url, title)
-
-    @staticmethod
-    def generate_hash(url, session_id, timestamp):
-        u = urlparse(url)
-        data = f'nor8eeprd8ose3k6{timestamp}GET{u.path}?{u.query}{session_id}'
-        result = hashlib.sha256(data.encode()).digest().hex()
-        return f'{timestamp}.{result}'
 
 
 async def run():
