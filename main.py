@@ -46,6 +46,8 @@ class LiveRecoder:
                 await self.run()
             except ConnectionError as error:
                 logger.error(error)
+                await self.client.aclose()
+                self.client = self.get_client()
             except Exception as error:
                 logger.exception(f'{self.flag}直播检测未知错误\n{repr(error)}')
             await asyncio.sleep(self.interval)
@@ -59,8 +61,6 @@ class LiveRecoder:
             response.raise_for_status()
             return response
         except httpx.ProtocolError as error:
-            await self.client.aclose()
-            self.client = self.get_client()
             raise ConnectionError(f'{self.flag}直播检测请求协议错误\n{error}')
         except httpx.HTTPStatusError as error:
             raise ConnectionError(f'{self.flag}直播检测请求状态码错误\n{error}\n{response.text}')
