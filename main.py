@@ -8,10 +8,12 @@ import urllib
 from http.cookies import SimpleCookie
 from subprocess import Popen
 from typing import Dict, Tuple
+from urllib import request
 from urllib.parse import urlparse
 
 import ffmpeg
 import httpx
+from httpx_socks import AsyncProxyTransport
 from jsonpath_ng.ext import parse
 from loguru import logger
 import streamlink
@@ -68,15 +70,21 @@ class LiveRecoder:
             raise ConnectionError(f'{self.flag}直播检测请求错误\n{repr(error)}')
 
     def get_client(self):
-        return httpx.AsyncClient(
-            http2=True,
-            headers=self.headers,
-            cookies=self.cookies,
-            timeout=self.interval,
-            proxies=self.proxy,
-            limits=httpx.Limits(max_keepalive_connections=100, keepalive_expiry=self.interval * 2),
-            transport=httpx.AsyncHTTPTransport(retries=3)
-        )
+        kwargs = {
+            'http2': True,
+            'timeout': self.interval,
+            'limits': httpx.Limits(max_keepalive_connections=100, keepalive_expiry=self.interval * 2),
+            'headers': self.headers,
+            'cookies': self.cookies
+        }
+        if self.proxy:
+            if 'socks' in self.proxy:
+                kwargs['transport'] = AsyncProxyTransport.from_url(self.proxy)
+            else:
+                kwargs['proxies'] = self.proxy
+        else:
+            self.proxy = request.getproxies().get('http')
+        return httpx.AsyncClient(**kwargs)
 
     @staticmethod
     def get_cookies(cookies_str: str):
