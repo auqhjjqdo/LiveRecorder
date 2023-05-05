@@ -7,7 +7,7 @@ import time
 import urllib
 from http.cookies import SimpleCookie
 from subprocess import Popen
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 from urllib import request
 from urllib.parse import urlparse
 
@@ -124,24 +124,26 @@ class LiveRecoder:
             session.set_plugin_option(**plugin_option)
         return session
 
-    async def run_record(self, url, title):
+    async def run_record(self, stream: Union[StreamIO, HTTPStream], title):
         # 获取输出文件名
         filename = self.get_filename(title)
-
-        logger.info(f'{self.flag}开始录制\n{url}\t{title}')
-        # 新建output目录
-        os.makedirs('output', exist_ok=True)
-        # 创建ffmpeg管道
-        pipe = self.create_pipe(filename)
-        # 调用streamlink录制直播
-        await asyncio.to_thread(self.stream_writer, url, title, pipe)  # 创建线程防止异步阻塞
-        pipe.terminate()
-        recording.pop(url, None)
-        logger.info(f'{self.flag}停止录制\n{url}\t{title}')
+        if stream:
+            logger.info(f'{self.flag}开始录制：{filename}')
+            # 新建output目录
+            os.makedirs('output', exist_ok=True)
+            # 创建ffmpeg管道
+            pipe = self.create_pipe(filename)
+            # 调用streamlink录制直播
+            await asyncio.to_thread(self.stream_writer, stream, filename, pipe)  # 创建线程防止异步阻塞
+            pipe.terminate()
+            recording.pop(filename, None)
+            logger.info(f'{self.flag}停止录制：{filename}')
+        else:
+            logger.error(f'{self.flag}无可用直播源：{filename}')
 
     def create_pipe(self, filename):
-        logger.info(f'{self.flag}创建ffmpeg管道')
-        pipe = (
+        logger.info(f'{self.flag}创建ffmpeg管道：{filename}')
+        pipe: Popen = (
             ffmpeg
             .input('pipe:')
             .output(
@@ -154,46 +156,23 @@ class LiveRecoder:
         )
         return pipe
 
-    def stream_writer(self, url, title, pipe):
+    def stream_writer(self, stream, filename, pipe: Popen):
+        logger.info(f'{self.flag}获取到直播流链接：{filename}\n{stream.url}')
+        output = FileOutput(fd=pipe.stdin)
         try:
-            # Bilibili → HTTPStream[flv]
-            # Youtube,Twitch → HLSStream[mpegts]
-            # Twitcasting → Stream[mov,mp4,m4a,3gp,3g2,mj2]
-            # 添加Twitch跳过广告插件选项
-            if 'twitch' in url:
-                session = self.get_streamlink(plugin_option={
-                    'plugin': 'twitch',
-                    'key': 'disable-ads',
-                    'value': True,
-                })
-            else:
-                session = self.get_streamlink()
-            if 'douyu' in url:
-                stream = HTTPStream(session, url)
-            else:
-                stream = session.streams(url).get('best')
-            # stream为取最高清晰度的直播流，可能为空
-            if stream:
-                logger.info(f'{self.flag}获取到直播流链接\n{url}\t{title}\n{stream.url}')
-                output = FileOutput(fd=pipe.stdin)
-                stream_fd, prebuffer = open_stream(stream)
-                try:
-                    logger.info(f'{self.flag}正在录制\n{url}\t{title}')
-                    output.open()
-                    recording[url] = (stream_fd, output, pipe)
-                    StreamRunner(stream_fd, output).run(prebuffer)
-                except BrokenPipeError as error:
-                    logger.error(f'{self.flag}管道损坏错误\n{url}\t{title}\n{error}')
-                except OSError as error:
-                    logger.error(f'{self.flag}文件写入错误\n{url}\t{title}\n{error}')
-                finally:
-                    output.close()
-            else:
-                logger.error(f'{self.flag}无可用直播源\n{url}\t{title}')
-        except streamlink.StreamlinkError as error:
-            logger.error(f'{self.flag}streamlink错误\n{url}\t{title}\n{error}')
+            stream_fd, prebuffer = open_stream(stream)
+            output.open()
+            recording[filename] = (stream_fd, output, pipe)
+            logger.info(f'{self.flag}正在录制：{filename}')
+            StreamRunner(stream_fd, output).run(prebuffer)
+        except BrokenPipeError as error:
+            logger.error(f'{self.flag}管道损坏错误：{filename}\n{error}')
+        except OSError as error:
+            logger.error(f'{self.flag}文件写入错误：{filename}\n{error}')
         except Exception as error:
-            logger.exception(f'{self.flag}直播录制未知错误\n{url}\t{title}\n{error}')
+            logger.exception(f'{self.flag}直播录制未知错误\n{error}')
+        finally:
+            output.close()
 
 
 class Bilibili(LiveRecoder):
@@ -207,7 +186,8 @@ class Bilibili(LiveRecoder):
             )).json()
             if response['data']['live_status'] == 1:
                 title = response['data']['title']
-                await self.run_record(url, title)
+                stream = self.get_streamlink().streams(url).get('best')  # HTTPStream[flv]
+                await self.run_record(stream, title)
 
 
 class Douyu(LiveRecoder):
@@ -231,7 +211,8 @@ class Douyu(LiveRecoder):
                 title = response['data']['room_name']
                 rtmp_id = response['data']['rtmp_live'].split('.')[0]
                 url = f'http://hw-tct.douyucdn.cn/live/{rtmp_id}_4000.flv'
-                await self.run_record(url, title)
+                stream = HTTPStream(self.get_streamlink(), url)  # HTTPStream[flv]
+                await self.run_record(stream, title)
 
 
 class Youtube(LiveRecoder):
@@ -264,7 +245,8 @@ class Youtube(LiveRecoder):
                     url = f"https://www.youtube.com/watch?v={video['videoId']}"
                     title = video['title']['runs'][0]['text']
                     if url not in recording:
-                        asyncio.create_task(self.run_record(url, title), name=url)
+                        stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
+                        asyncio.create_task(self.run_record(stream, title), name=url)
 
 
 class Twitch(LiveRecoder):
@@ -288,7 +270,12 @@ class Twitch(LiveRecoder):
             )).json()
             if response[0]['data']['user']['stream']:
                 title = response[0]['data']['user']['lastBroadcast']['title']
-                await self.run_record(url, title)
+                stream = self.get_streamlink(plugin_option={
+                    'plugin': 'twitch',
+                    'key': 'disable-ads',
+                    'value': True,
+                }).streams(url).get('best')  # HLSStream[mpegts]
+                await self.run_record(stream, title)
 
 
 class Twitcasting(LiveRecoder):
@@ -309,7 +296,8 @@ class Twitcasting(LiveRecoder):
                     url=url
                 )).text
                 title = re.search('<meta name="twitter:title" content="(.*?)">', response).group(1)
-                await self.run_record(url, title)
+                stream = self.get_streamlink().streams(url).get('best')  # Stream[mov,mp4,m4a,3gp,3g2,mj2]
+                await self.run_record(stream, title)
 
 
 async def run():
