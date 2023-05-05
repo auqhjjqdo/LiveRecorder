@@ -147,7 +147,7 @@ class LiveRecoder:
             output.open()
             recording[url] = (stream_fd, output)
             logger.info(f'{self.flag}正在录制：{filename}')
-            StreamRunner(stream_fd, output).run(prebuffer)
+            StreamRunner(stream_fd, output, show_progress=True).run(prebuffer)
         except BrokenPipeError as error:
             logger.error(f'{self.flag}管道损坏错误：{filename}\n{error}')
         except OSError as error:
@@ -205,7 +205,7 @@ class Douyu(LiveRecoder):
                 rtmp_id = response['data']['rtmp_live'].split('.')[0]
                 stream = HTTPStream(
                     self.get_streamlink(),
-                    f'http://hw-tct.douyucdn.cn/live/{rtmp_id}_4000.flv'
+                    f'http://hdltc1.douyucdn.cn/live/{rtmp_id}_4000.flv'
                 )  # HTTPStream[flv]
                 await self.run_record(stream, url, title, 'flv')
 
@@ -298,14 +298,14 @@ class Twitcasting(LiveRecoder):
 async def run():
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.load(f)
-    tasks = []
-    for item in config['user']:
-        platform_class = globals()[item['platform']]
-        coro = platform_class(config, item).start()
-        tasks.append(asyncio.create_task(coro))
     try:
+        tasks = []
+        for item in config['user']:
+            platform_class = globals()[item['platform']]
+            coro = platform_class(config, item).start()
+            tasks.append(asyncio.create_task(coro))
         await asyncio.wait(tasks)
-    except asyncio.CancelledError:
+    except (asyncio.CancelledError, KeyboardInterrupt, SystemExit):
         logger.warning('用户中断录制，正在关闭直播流')
         for stream_fd, output in recording.copy().values():
             stream_fd.close()
