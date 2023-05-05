@@ -6,7 +6,7 @@ import re
 import time
 import urllib
 from http.cookies import SimpleCookie
-from subprocess import Popen
+from pathlib import Path
 from typing import Dict, Tuple, Union
 from urllib import request
 from urllib.parse import urlparse
@@ -22,7 +22,7 @@ from streamlink_cli.main import open_stream
 from streamlink_cli.output import FileOutput
 from streamlink_cli.streamrunner import StreamRunner
 
-recording: Dict[str, Tuple[StreamIO, FileOutput, Popen]] = {}
+recording: Dict[str, Tuple[StreamIO, FileOutput]] = {}
 
 
 class LiveRecoder:
@@ -111,8 +111,6 @@ class LiveRecoder:
         }
         for half, full in char_dict.items():
             title = title.replace(half, full)
-        if self.format:
-            format = self.format
         filename = f'[{live_time}]{self.flag}{title}.{format}'
         return filename
 
@@ -131,40 +129,23 @@ class LiveRecoder:
         filename = self.get_filename(title, format)
         if stream:
             logger.info(f'{self.flag}开始录制：{filename}')
-            # 新建output目录
-            os.makedirs('output', exist_ok=True)
-            # 创建ffmpeg管道
-            pipe = self.create_pipe(filename)
             # 调用streamlink录制直播
-            await asyncio.to_thread(self.stream_writer, stream, url, filename, pipe)  # 创建线程防止异步阻塞
-            pipe.terminate()
+            await asyncio.to_thread(self.stream_writer, stream, url, filename)  # 创建线程防止异步阻塞
+            # format配置存在且不等于直播平台默认格式时运行ffmpeg封装
+            if self.format and self.format != format:
+                await asyncio.to_thread(self.run_ffmpeg, filename, format)
             recording.pop(url, None)
             logger.info(f'{self.flag}停止录制：{filename}')
         else:
             logger.error(f'{self.flag}无可用直播源：{filename}')
 
-    def create_pipe(self, filename):
-        logger.info(f'{self.flag}创建ffmpeg管道：{filename}')
-        pipe: Popen = (
-            ffmpeg
-            .input('pipe:')
-            .output(
-                f'output/{filename}',
-                codec='copy',
-                map_metadata=-1,
-            )
-            .global_args('-hide_banner')
-            .run_async(pipe_stdin=True)
-        )
-        return pipe
-
-    def stream_writer(self, stream, url, filename, pipe: Popen):
+    def stream_writer(self, stream, url, filename):
         logger.info(f'{self.flag}获取到直播流链接：{filename}\n{stream.url}')
-        output = FileOutput(fd=pipe.stdin)
+        output = FileOutput(Path(f'output/{filename}'))
         try:
             stream_fd, prebuffer = open_stream(stream)
             output.open()
-            recording[url] = (stream_fd, output, pipe)
+            recording[url] = (stream_fd, output)
             logger.info(f'{self.flag}正在录制：{filename}')
             StreamRunner(stream_fd, output).run(prebuffer)
         except BrokenPipeError as error:
@@ -175,6 +156,16 @@ class LiveRecoder:
             logger.exception(f'{self.flag}直播录制未知错误\n{error}')
         finally:
             output.close()
+
+    def run_ffmpeg(self, filename, format):
+        logger.info(f'{self.flag}开始ffmpeg封装：{filename}')
+        new_filename = filename.replace(f'.{format}', f'.{self.format}')
+        ffmpeg.input(f'output/{filename}').output(
+            f'output/{new_filename}',
+            codec='copy',
+            map_metadata=-1,
+        ).global_args('-hide_banner').run()
+        os.remove(f'output/{filename}')
 
 
 class Bilibili(LiveRecoder):
@@ -316,10 +307,9 @@ async def run():
         await asyncio.wait(tasks)
     except asyncio.CancelledError:
         logger.warning('用户中断录制，正在关闭直播流')
-        for stream_fd, output, pipe in recording.copy().values():
+        for stream_fd, output in recording.copy().values():
             stream_fd.close()
             output.close()
-            pipe.terminate()
 
 
 if __name__ == '__main__':
