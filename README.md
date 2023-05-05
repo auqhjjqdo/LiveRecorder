@@ -64,6 +64,8 @@ python3 -m main.py
 
 配置文件存储于`config.json`，该文件位于可执行程序相同目录
 
+修改示例配置文件`config.sample.json`后务必重命名为`config.json`
+
 文件内容要求严格按照json语法，请前往[在线json格式化网站](https://www.bejson.com/)校验后再修改
 
 ### 代理配置
