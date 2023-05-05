@@ -126,7 +126,7 @@ class LiveRecoder:
             session.set_plugin_option(**plugin_option)
         return session
 
-    async def run_record(self, stream: Union[StreamIO, HTTPStream], title, format):
+    async def run_record(self, stream: Union[StreamIO, HTTPStream], url, title, format):
         # 获取输出文件名
         filename = self.get_filename(title, format)
         if stream:
@@ -136,9 +136,9 @@ class LiveRecoder:
             # 创建ffmpeg管道
             pipe = self.create_pipe(filename)
             # 调用streamlink录制直播
-            await asyncio.to_thread(self.stream_writer, stream, filename, pipe)  # 创建线程防止异步阻塞
+            await asyncio.to_thread(self.stream_writer, stream, url, filename, pipe)  # 创建线程防止异步阻塞
             pipe.terminate()
-            recording.pop(filename, None)
+            recording.pop(url, None)
             logger.info(f'{self.flag}停止录制：{filename}')
         else:
             logger.error(f'{self.flag}无可用直播源：{filename}')
@@ -158,13 +158,13 @@ class LiveRecoder:
         )
         return pipe
 
-    def stream_writer(self, stream, filename, pipe: Popen):
+    def stream_writer(self, stream, url, filename, pipe: Popen):
         logger.info(f'{self.flag}获取到直播流链接：{filename}\n{stream.url}')
         output = FileOutput(fd=pipe.stdin)
         try:
             stream_fd, prebuffer = open_stream(stream)
             output.open()
-            recording[filename] = (stream_fd, output, pipe)
+            recording[url] = (stream_fd, output, pipe)
             logger.info(f'{self.flag}正在录制：{filename}')
             StreamRunner(stream_fd, output).run(prebuffer)
         except BrokenPipeError as error:
@@ -189,7 +189,7 @@ class Bilibili(LiveRecoder):
             if response['data']['live_status'] == 1:
                 title = response['data']['title']
                 stream = self.get_streamlink().streams(url).get('best')  # HTTPStream[flv]
-                await self.run_record(stream, title, 'flv')
+                await self.run_record(stream, url, title, 'flv')
 
 
 class Douyu(LiveRecoder):
@@ -212,9 +212,11 @@ class Douyu(LiveRecoder):
             if response['data']['show_status'] == '1':
                 title = response['data']['room_name']
                 rtmp_id = response['data']['rtmp_live'].split('.')[0]
-                url = f'http://hw-tct.douyucdn.cn/live/{rtmp_id}_4000.flv'
-                stream = HTTPStream(self.get_streamlink(), url)  # HTTPStream[flv]
-                await self.run_record(stream, title, 'flv')
+                stream = HTTPStream(
+                    self.get_streamlink(),
+                    f'http://hw-tct.douyucdn.cn/live/{rtmp_id}_4000.flv'
+                )  # HTTPStream[flv]
+                await self.run_record(stream, url, title, 'flv')
 
 
 class Youtube(LiveRecoder):
@@ -248,7 +250,7 @@ class Youtube(LiveRecoder):
                     title = video['title']['runs'][0]['text']
                     if url not in recording:
                         stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
-                        asyncio.create_task(self.run_record(stream, title, 'ts'), name=url)
+                        asyncio.create_task(self.run_record(stream, url, title, 'ts'), name=url)
 
 
 class Twitch(LiveRecoder):
@@ -277,7 +279,7 @@ class Twitch(LiveRecoder):
                     'key': 'disable-ads',
                     'value': True,
                 }).streams(url).get('best')  # HLSStream[mpegts]
-                await self.run_record(stream, title, 'ts')
+                await self.run_record(stream, url, title, 'ts')
 
 
 class Twitcasting(LiveRecoder):
@@ -299,7 +301,7 @@ class Twitcasting(LiveRecoder):
                 )).text
                 title = re.search('<meta name="twitter:title" content="(.*?)">', response).group(1)
                 stream = self.get_streamlink().streams(url).get('best')  # Stream[mov,mp4,m4a,3gp,3g2,mj2]
-                await self.run_record(stream, title, 'mp4')
+                await self.run_record(stream, url, title, 'mp4')
 
 
 async def run():
