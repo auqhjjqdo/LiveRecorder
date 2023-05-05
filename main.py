@@ -111,8 +111,18 @@ class LiveRecoder:
         }
         for half, full in char_dict.items():
             title = title.replace(half, full)
-        filename = f'[{live_time}]{self.flag}{title}'
+        filename = f'[{live_time}]{self.flag}{title}.{self.format}'
         return filename
+
+    def get_streamlink(self, plugin_option: dict = None):
+        session = streamlink.Streamlink()
+        # 添加streamlink的http相关选项
+        for arg in ('proxy', 'headers', 'cookies'):
+            if attr := getattr(self, arg):
+                session.set_option(f'http-{arg}', attr)
+        if plugin_option:
+            session.set_plugin_option(**plugin_option)
+        return session
 
     async def run_record(self, url, title):
         # 获取输出文件名
@@ -135,7 +145,7 @@ class LiveRecoder:
             ffmpeg
             .input('pipe:')
             .output(
-                f'output/{filename}.{self.format}',
+                f'output/{filename}',
                 codec='copy',
                 map_metadata=-1,
             )
@@ -149,14 +159,15 @@ class LiveRecoder:
             # Bilibili → HTTPStream[flv]
             # Youtube,Twitch → HLSStream[mpegts]
             # Twitcasting → Stream[mov,mp4,m4a,3gp,3g2,mj2]
-            session = streamlink.Streamlink()
-            # 添加streamlink的http相关选项
-            for arg in ('proxy', 'headers', 'cookies'):
-                if attr := getattr(self, arg):
-                    session.set_option(f'http-{arg}', attr)
             # 添加Twitch跳过广告插件选项
             if 'twitch' in url:
-                session.set_plugin_option('twitch', 'disable-ads', True)
+                session = self.get_streamlink(plugin_option={
+                    'plugin': 'twitch',
+                    'key': 'disable-ads',
+                    'value': True,
+                })
+            else:
+                session = self.get_streamlink()
             if 'douyu' in url:
                 stream = HTTPStream(session, url)
             else:
