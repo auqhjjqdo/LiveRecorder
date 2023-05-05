@@ -38,7 +38,7 @@ jobs:
         with:
           name: LiveRecorder_${{ runner.os }}_${{ github.ref_name }}
           path: |
-            config.json
+            config.sample.json
             LiveRecorder*
 
       - name: Create Archive
@@ -47,7 +47,7 @@ jobs:
         with:
           filename: LiveRecorder_${{ runner.os }}_${{ github.ref_name }}.zip
           path: |
-            config.json
+            config.sample.json
             LiveRecorder*
 
       - name: Release
@@ -100,7 +100,7 @@ jobs:
         with:
           name: LiveRecorder_${{ runner.os }}_${{ matrix.arch }}_${{ github.ref_name }}
           path: |
-            config.json
+            config.sample.json
             LiveRecorder*
 
       - name: Create Archive
@@ -109,7 +109,7 @@ jobs:
         with:
           filename: LiveRecorder_${{ runner.os }}_${{ matrix.arch }}_${{ github.ref_name }}.zip
           path: |
-            config.json
+            config.sample.json
             LiveRecorder*
 
       - name: Release
