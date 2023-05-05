@@ -13,10 +13,10 @@ from urllib.parse import urlparse
 
 import ffmpeg
 import httpx
+import streamlink
 from httpx_socks import AsyncProxyTransport
 from jsonpath_ng.ext import parse
 from loguru import logger
-import streamlink
 from streamlink.stream import StreamIO, HTTPStream
 from streamlink_cli.main import open_stream
 from streamlink_cli.output import FileOutput
@@ -124,16 +124,16 @@ class LiveRecoder:
             session.set_plugin_option(**plugin_option)
         return session
 
-    async def run_record(self, stream: Union[StreamIO, HTTPStream], url, title, format):
+    def run_record(self, stream: Union[StreamIO, HTTPStream], url, title, format):
         # 获取输出文件名
         filename = self.get_filename(title, format)
         if stream:
             logger.info(f'{self.flag}开始录制：{filename}')
             # 调用streamlink录制直播
-            await asyncio.to_thread(self.stream_writer, stream, url, filename)  # 创建线程防止异步阻塞
+            self.stream_writer(stream, url, filename)
             # format配置存在且不等于直播平台默认格式时运行ffmpeg封装
             if self.format and self.format != format:
-                await asyncio.to_thread(self.run_ffmpeg, filename, format)
+                self.run_ffmpeg(filename, format)
             recording.pop(url, None)
             logger.info(f'{self.flag}停止录制：{filename}')
         else:
@@ -180,7 +180,7 @@ class Bilibili(LiveRecoder):
             if response['data']['live_status'] == 1:
                 title = response['data']['title']
                 stream = self.get_streamlink().streams(url).get('best')  # HTTPStream[flv]
-                await self.run_record(stream, url, title, 'flv')
+                await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
 
 
 class Douyu(LiveRecoder):
@@ -207,7 +207,7 @@ class Douyu(LiveRecoder):
                     self.get_streamlink(),
                     f'http://hdltc1.douyucdn.cn/live/{rtmp_id}_4000.flv'
                 )  # HTTPStream[flv]
-                await self.run_record(stream, url, title, 'flv')
+                await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
 
 
 class Youtube(LiveRecoder):
@@ -241,7 +241,8 @@ class Youtube(LiveRecoder):
                     title = video['title']['runs'][0]['text']
                     if url not in recording:
                         stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
-                        asyncio.create_task(self.run_record(stream, url, title, 'ts'), name=url)
+                        # FIXME:多开直播间中断
+                        asyncio.create_task(asyncio.to_thread(self.run_record, stream, url, title, 'ts'))
 
 
 class Twitch(LiveRecoder):
@@ -270,7 +271,7 @@ class Twitch(LiveRecoder):
                     'key': 'disable-ads',
                     'value': True,
                 }).streams(url).get('best')  # HLSStream[mpegts]
-                await self.run_record(stream, url, title, 'ts')
+                await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
 
 class Twitcasting(LiveRecoder):
@@ -292,7 +293,7 @@ class Twitcasting(LiveRecoder):
                 )).text
                 title = re.search('<meta name="twitter:title" content="(.*?)">', response).group(1)
                 stream = self.get_streamlink().streams(url).get('best')  # Stream[mov,mp4,m4a,3gp,3g2,mj2]
-                await self.run_record(stream, url, title, 'mp4')
+                await asyncio.to_thread(self.run_record, stream, url, title, 'mp4')
 
 
 async def run():
