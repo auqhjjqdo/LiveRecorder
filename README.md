@@ -76,26 +76,19 @@ python3 -m main.py
 
 更多格式参照[streamlink代理文档](https://streamlink.github.io/cli/proxy.html)
 
-### 输出格式配置
-
-`format`的值为直播录制输出文件的封装格式（非编码格式），推荐使用`ts`格式以保证输出文件兼容性
-
-例如`ts`、`flv`、`mp4`、`mkv`等
-
-支持所有FFmpeg的视频输出格式，详见[FFmpeg官方文档](https://ffmpeg.org/ffmpeg-formats.html#Muxers)
-
 ### 直播录制配置
 
 按照示例修改`user`列表，注意逗号、引号和缩进
 
-| 字段       | 含义          | 可填内容                                                                | 是否必填 | 备注                          |
-|----------|-------------|---------------------------------------------------------------------|------|-----------------------------|
-| platform | 直播平台        | `Bilibili`<br/>`Douyu`<br/>`Youtube`<br/>`Twitch`<br/>`Twitcasting` | 必填   | 必须为首字母大写                    |
-| id       | 对应平台的直播用户id | 哔哩哔哩、斗鱼为直播间房间号<br/>youtube为频道id<br/>twitch为登录名<br/>twitcasting为用户名  | 必填   | 参考config文件示例格式<br/>直播网址即可找到 |
-| name     | 自定义主播名      | 任意字符                                                                | 非必填  | 用于录制文件区分<br/>未填写时默认使用id     |
-| interval | 检测间隔        | 任意整数或小数                                                             | 非必填  | 默认检测间隔为10秒                  |
-| headers  | HTTP 标头     | 参考[官方文档](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers) | 非必填  | 可用于部分需请求头验证的网站              |
-| cookies  | HTTP Cookie | `key=value`<br/>多个cookie使用`;`分隔                                     | 非必填  | 可用于录制需登录观看的直播               |
+| 字段       | 含义          | 可填内容                                                                                        | 是否必填 | 备注                          |
+|----------|-------------|---------------------------------------------------------------------------------------------|------|-----------------------------|
+| platform | 直播平台        | `Bilibili`<br/>`Douyu`<br/>`Youtube`<br/>`Twitch`<br/>`Twitcasting`                         | 必填   | 必须为首字母大写                    |
+| id       | 对应平台的直播用户id | 哔哩哔哩、斗鱼为直播间房间号<br/>youtube为频道id<br/>twitch为登录名<br/>twitcasting为用户名                          | 必填   | 参考config文件示例格式<br/>直播网址即可找到 |
+| name     | 自定义主播名      | 任意字符                                                                                        | 非必填  | 用于录制文件区分<br/>未填写时默认使用id     |
+| interval | 检测间隔        | 任意整数或小数                                                                                     | 非必填  | 默认检测间隔为10秒                  |
+| format   | 输出格式        | 例如`ts`、`flv`、`mp4`、`mkv`等<br/>详见[FFmpeg官方文档](https://ffmpeg.org/ffmpeg-formats.html#Muxers) | 非必填  | 默认使用直播平台的直播流输出格式            |
+| headers  | HTTP 标头     | 参考[官方文档](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers)                         | 非必填  | 可用于部分需请求头验证的网站              |
+| cookies  | HTTP Cookie | `key=value`<br/>多个cookie使用`;`分隔                                                             | 非必填  | 可用于录制需登录观看的直播               |
 
 ### 注意事项
 

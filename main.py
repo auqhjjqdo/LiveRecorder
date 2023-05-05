@@ -28,7 +28,7 @@ recording: Dict[str, Tuple[StreamIO, FileOutput, Popen]] = {}
 class LiveRecoder:
     def __init__(self, config: dict, user: dict):
         self.proxy = config.get('proxy')
-        self.format = config.get('format', 'ts')
+        self.format = config.get('format')
 
         self.id = user['id']
         platform = user['platform']
@@ -95,7 +95,7 @@ class LiveRecoder:
         else:
             return {}
 
-    def get_filename(self, title):
+    def get_filename(self, title, format):
         live_time = time.strftime('%Y.%m.%d %H.%M.%S')
         # 文件名特殊字符转换为全角字符
         char_dict = {
@@ -111,7 +111,9 @@ class LiveRecoder:
         }
         for half, full in char_dict.items():
             title = title.replace(half, full)
-        filename = f'[{live_time}]{self.flag}{title}.{self.format}'
+        if self.format:
+            format = self.format
+        filename = f'[{live_time}]{self.flag}{title}.{format}'
         return filename
 
     def get_streamlink(self, plugin_option: dict = None):
@@ -124,9 +126,9 @@ class LiveRecoder:
             session.set_plugin_option(**plugin_option)
         return session
 
-    async def run_record(self, stream: Union[StreamIO, HTTPStream], title):
+    async def run_record(self, stream: Union[StreamIO, HTTPStream], title, format):
         # 获取输出文件名
-        filename = self.get_filename(title)
+        filename = self.get_filename(title, format)
         if stream:
             logger.info(f'{self.flag}开始录制：{filename}')
             # 新建output目录
@@ -187,7 +189,7 @@ class Bilibili(LiveRecoder):
             if response['data']['live_status'] == 1:
                 title = response['data']['title']
                 stream = self.get_streamlink().streams(url).get('best')  # HTTPStream[flv]
-                await self.run_record(stream, title)
+                await self.run_record(stream, title, 'flv')
 
 
 class Douyu(LiveRecoder):
@@ -212,7 +214,7 @@ class Douyu(LiveRecoder):
                 rtmp_id = response['data']['rtmp_live'].split('.')[0]
                 url = f'http://hw-tct.douyucdn.cn/live/{rtmp_id}_4000.flv'
                 stream = HTTPStream(self.get_streamlink(), url)  # HTTPStream[flv]
-                await self.run_record(stream, title)
+                await self.run_record(stream, title, 'flv')
 
 
 class Youtube(LiveRecoder):
@@ -246,7 +248,7 @@ class Youtube(LiveRecoder):
                     title = video['title']['runs'][0]['text']
                     if url not in recording:
                         stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
-                        asyncio.create_task(self.run_record(stream, title), name=url)
+                        asyncio.create_task(self.run_record(stream, title, 'ts'), name=url)
 
 
 class Twitch(LiveRecoder):
@@ -275,7 +277,7 @@ class Twitch(LiveRecoder):
                     'key': 'disable-ads',
                     'value': True,
                 }).streams(url).get('best')  # HLSStream[mpegts]
-                await self.run_record(stream, title)
+                await self.run_record(stream, title, 'ts')
 
 
 class Twitcasting(LiveRecoder):
@@ -297,7 +299,7 @@ class Twitcasting(LiveRecoder):
                 )).text
                 title = re.search('<meta name="twitter:title" content="(.*?)">', response).group(1)
                 stream = self.get_streamlink().streams(url).get('best')  # Stream[mov,mp4,m4a,3gp,3g2,mj2]
-                await self.run_record(stream, title)
+                await self.run_record(stream, title, 'mp4')
 
 
 async def run():
