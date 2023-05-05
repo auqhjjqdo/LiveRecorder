@@ -45,7 +45,8 @@
     {
       "platform": "Twitcasting",
       "id": "kano_2525",
-      "name": "鹿乃"
+      "name": "鹿乃",
+      "interval": 8
     }
   ]
 }

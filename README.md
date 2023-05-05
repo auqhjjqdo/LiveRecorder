@@ -107,6 +107,10 @@ YouTube的频道ID一般是由`UC`开头的一段字符，由于YouTube可以自
 获取YouTube的频道ID可以在打开频道主页后，按F12打开开发者工具，在控制台输入`ytInitialData.metadata.channelMetadataRenderer.externalId`
 ，返回的字符即YouTube的频道ID
 
+#### TwitCasting的检测间隔
+
+由于直播检测请求使用了HTTP Keep-Alive长连接防止频繁建立TCP通道导致性能下降，但TwitCasting的服务器要求10秒内无请求则关闭连接，所以配置文件在添加TwitCasting的直播时尽量加入`interval`字段并将检测间隔设为小于10秒，以免频繁出现请求协议错误
+
 ## 输出文件
 
 默认将直播录制文件输出到运行目录的`output`文件夹
