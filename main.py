@@ -190,30 +190,17 @@ class Douyu(LiveRecoder):
     async def run(self):
         url = f'https://www.douyu.com/{self.id}'
         if url not in recording:
-            response = await self.get_info()
-            if response['data']['show_status'] == '1':
+            response = (await self.request(
+                method='GET',
+                url=f'https://open.douyucdn.cn/api/RoomApi/room/{self.id}',
+            )).json()
+            if response['data']['room_status'] == '1':
                 title = response['data']['room_name']
                 stream = HTTPStream(
                     self.get_streamlink(),
                     await self.get_live()
                 )  # HTTPStream[flv]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
-
-    async def get_info(self):
-        params = {
-            'aid': 'wp',
-            'client_sys': 'wp',
-            'time': int(time.time()),
-        }
-        params['auth'] = hashlib.md5(
-            f'room/{self.id}?{urllib.parse.urlencode(params)}zNzMV1y4EMxOHS6I5WKm'.encode()
-        ).hexdigest()
-        response = (await self.request(
-            method='GET',
-            url=f'http://www.douyutv.com/api/v1/room/{self.id}',
-            params=params
-        )).json()
-        return response
 
     async def get_js(self):
         response = (await self.request(
