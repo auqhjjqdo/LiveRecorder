@@ -4,3 +4,5 @@ loguru
 httpx[http2]
 httpx-socks[asyncio]
 jsonpath-ng
+jsengine
+PyChakra

@@ -5,14 +5,16 @@ import os
 import re
 import time
 import urllib
+import uuid
 from http.cookies import SimpleCookie
 from pathlib import Path
 from typing import Dict, Tuple, Union
 from urllib import request
-from urllib.parse import urlparse
+from urllib.parse import parse_qs
 
 import ffmpeg
 import httpx
+import jsengine
 import streamlink
 from httpx_socks import AsyncProxyTransport
 from jsonpath_ng.ext import parse
@@ -163,7 +165,8 @@ class LiveRecoder:
         ffmpeg.input(f'output/{filename}').output(
             f'output/{new_filename}',
             codec='copy',
-            map_metadata=-1,
+            map_metadata='-1',
+            movflags='faststart'
         ).global_args('-hide_banner').run()
         os.remove(f'output/{filename}')
 
@@ -187,27 +190,60 @@ class Douyu(LiveRecoder):
     async def run(self):
         url = f'https://www.douyu.com/{self.id}'
         if url not in recording:
-            params = {
-                'aid': 'wp',
-                'client_sys': 'wp',
-                'time': int(time.time()),
-            }
-            params['auth'] = hashlib.md5(
-                f'room/{self.id}?{urllib.parse.urlencode(params)}zNzMV1y4EMxOHS6I5WKm'.encode()
-            ).hexdigest()
-            response = (await self.request(
-                method='GET',
-                url=f'http://www.douyutv.com/api/v1/room/{self.id}',
-                params=params
-            )).json()
+            response = await self.get_info()
             if response['data']['show_status'] == '1':
                 title = response['data']['room_name']
-                rtmp_id = response['data']['rtmp_live'].split('.')[0]
                 stream = HTTPStream(
                     self.get_streamlink(),
-                    f'http://hdltc1.douyucdn.cn/live/{rtmp_id}_4000.flv'
+                    await self.get_live()
                 )  # HTTPStream[flv]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
+
+    async def get_info(self):
+        params = {
+            'aid': 'wp',
+            'client_sys': 'wp',
+            'time': int(time.time()),
+        }
+        params['auth'] = hashlib.md5(
+            f'room/{self.id}?{urllib.parse.urlencode(params)}zNzMV1y4EMxOHS6I5WKm'.encode()
+        ).hexdigest()
+        response = (await self.request(
+            method='GET',
+            url=f'http://www.douyutv.com/api/v1/room/{self.id}',
+            params=params
+        )).json()
+        return response
+
+    async def get_js(self):
+        response = (await self.request(
+            method='POST',
+            url=f'https://www.douyu.com/swf_api/homeH5Enc?rids={self.id}'
+        )).json()
+        js_enc = response['data'][f'room{self.id}']
+        crypto_js = (await self.request(
+            method='GET',
+            url='https://cdn.staticfile.org/crypto-js/4.1.1/crypto-js.min.js'
+        )).text
+        return jsengine.JSEngine(js_enc + crypto_js)
+
+    async def get_live(self):
+        did = uuid.uuid4().hex
+        tt = str(int(time.time()))
+        params = {
+            'did': did,
+            'tt': tt,
+            'rate': 0
+        }
+        js = await self.get_js()
+        query = js.call('ub98484234', self.id, did, tt)
+        params.update({k: v[0] for k, v in parse_qs(query).items()})
+        response = (await self.request(
+            method='POST',
+            url=f'https://www.douyu.com/lapi/live/getH5Play/{self.id}',
+            params=params
+        )).json()
+        return f"{response['data']['rtmp_url']}/{response['data']['rtmp_live']}"
 
 
 class Youtube(LiveRecoder):
@@ -292,7 +328,7 @@ class Twitcasting(LiveRecoder):
                     url=url
                 )).text
                 title = re.search('<meta name="twitter:title" content="(.*?)">', response).group(1)
-                stream = self.get_streamlink().streams(url).get('best')  # Stream[mov,mp4,m4a,3gp,3g2,mj2]
+                stream = self.get_streamlink().streams(url).get('best')  # Stream[mp4]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'mp4')
 
 
