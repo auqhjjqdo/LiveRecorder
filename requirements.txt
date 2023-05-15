@@ -2,7 +2,7 @@ streamlink
 ffmpeg-python
 loguru
 httpx[http2]
-httpx-socks[asyncio]
+git+https://github.com/JamzumSum/socksio.git
 jsonpath-ng
 jsengine
 quickjs

@@ -74,9 +74,12 @@ python3 -m main.py
 
 例如`http://127.0.0.1:7890`、`socks5://admin:passwd@127.0.0.1:1080`
 
-留空时默认自动检测系统代理
-
 更多格式参照[streamlink代理文档](https://streamlink.github.io/cli/proxy.html)
+
+建议优先使用http代理，目前socks5代理存在一定兼容性问题
+
+无需代理时去除引号填写`null`或删除该字段即可
+
 
 ### 直播录制配置
 
