@@ -110,6 +110,8 @@ class LiveRecoder:
         # 添加streamlink的http相关选项
         for arg in ('proxy', 'headers', 'cookies'):
             if attr := getattr(self, arg):
+                if 'socks' in attr:
+                    attr = attr.replace('://', 'h://')
                 session.set_option(f'http-{arg}', attr)
         if plugin_option:
             session.set_plugin_option(**plugin_option)
