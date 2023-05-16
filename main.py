@@ -26,7 +26,6 @@ recording: Dict[str, Tuple[StreamIO, FileOutput]] = {}
 class LiveRecoder:
     def __init__(self, config: dict, user: dict):
         self.proxy = config.get('proxy')
-        self.format = config.get('format')
 
         self.id = user['id']
         platform = user['platform']
@@ -36,6 +35,7 @@ class LiveRecoder:
         self.interval = user.get('interval', 10)
         self.headers = user.get('headers', {'User-Agent': 'Chrome'})
         self.cookies = self.get_cookies(user.get('cookies', ''))
+        self.format = user.get('format')
 
         self.client = self.get_client()
 
