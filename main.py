@@ -211,6 +211,7 @@ class Douyu(LiveRecoder):
         did = uuid.uuid4().hex
         tt = str(int(time.time()))
         params = {
+            'cdn': 'tct-h5',
             'did': did,
             'tt': tt,
             'rate': 0
