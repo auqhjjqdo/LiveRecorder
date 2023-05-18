@@ -328,6 +328,31 @@ class Afreeca(LiveRecoder):
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
 
+class Huya(LiveRecoder):
+    async def run(self):
+        url = f'https://www.huya.com/{self.id}'
+        if url not in recording:
+            response = (await self.request(
+                method='GET',
+                url=url
+            ))
+            pattern = "stream: \s*(.*?)\n"
+            result = re.search(pattern, response.text)
+            if result and result.group(1):
+                info = json.loads(result.group(1))
+                if not info.get("vMultiStreamInfo"):
+                    return
+                title = info.get("data")[0].get("gameLiveInfo").get("introduction")
+                streams = self.get_streamlink().streams(url)
+                if 'source_al' in streams:
+                    stream = streams.get("source_al")
+                elif 'source_tx' in streams:
+                    stream = streams.get("source_tx")
+                else:
+                    stream = streams.get("best")
+                await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
+
+
 async def run():
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.load(f)

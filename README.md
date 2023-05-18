@@ -27,6 +27,7 @@
 - [x] Twitch
 - [x] TwitCasting
 - [x] Afreeca
+- [x] 虎牙
 - [ ] 更多平台欢迎PR
 
 ## 使用
