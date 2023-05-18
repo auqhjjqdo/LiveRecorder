@@ -313,6 +313,21 @@ class Twitcasting(LiveRecoder):
                 await asyncio.to_thread(self.run_record, stream, url, title, 'mp4')
 
 
+class Afreeca(LiveRecoder):
+    async def run(self):
+        url = f'https://play.afreecatv.com/{self.id}'
+        if url not in recording:
+            response = (await self.request(
+                method='POST',
+                url='https://live.afreecatv.com/afreeca/player_live_api.php',
+                data={"bid": self.id, "mode": "landing", "player_type": "html5"}
+            )).json()
+            if response.get("CHANNEL").get("RESULT") != 0:
+                title = response.get("CHANNEL").get("TITLE")
+                stream = self.get_streamlink().streams(url).get('best')
+                await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
+
+
 async def run():
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.load(f)

@@ -26,6 +26,7 @@
 - [x] YouTube
 - [x] Twitch
 - [x] TwitCasting
+- [x] Afreeca
 - [ ] 更多平台欢迎PR
 
 ## 使用
