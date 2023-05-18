@@ -1,12 +1,12 @@
 name: Build
+run-name: Build
 
 on:
   workflow_dispatch:
   push:
     paths-ignore:
       - 'README.md'
-    tags:
-      - 'v*'
+      - '.github/**'
 
 jobs:
   desktop-build:
@@ -15,7 +15,7 @@ jobs:
         os: [ macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -24,37 +24,36 @@ jobs:
           python-version: '3.10'
           cache: 'pip'
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
-          pip3 install --upgrade pip setuptools
           pip3 install pyinstaller wheel
           pip3 install -r requirements.txt
 
-      - name: Pyinstaller Build
-        run: pyinstaller build/main.spec --distpath .
+      - name: Pyinstaller build
+        run: pyinstaller build/main.spec --distpath build
 
-      - name: Upload Artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: LiveRecorder_${{ runner.os }}_${{ github.ref_name }}
           path: |
             config.sample.json
-            LiveRecorder*
+            build/LiveRecorder*
 
-      - name: Create Archive
+      - name: Create archive
         if: startsWith(github.ref_name, 'v')
         uses: thedoctor0/zip-release@main
         with:
           filename: LiveRecorder_${{ runner.os }}_${{ github.ref_name }}.zip
           path: |
             config.sample.json
-            LiveRecorder*
+            build/LiveRecorder*
 
       - name: Release
         if: startsWith(github.ref_name, 'v')
         uses: softprops/action-gh-release@v1
         with:
-          files: ./*.zip
+          files: ./LiveRecorder*.zip
 
   linux-build:
     strategy:
@@ -62,7 +61,7 @@ jobs:
         arch: [ amd64, arm64 ]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -71,7 +70,7 @@ jobs:
           python-version: '3.10'
           cache: 'pip'
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           sudo add-apt-repository universe
           sudo apt install libfuse2
@@ -79,38 +78,40 @@ jobs:
           chmod +x appimage-builder-x86_64.AppImage
           pip3 install wheel
 
-      - name: Amd64 Build
+      - name: Amd64 build
         if: ${{ matrix.arch == 'amd64' }}
 #        uses: AppImageCrafters/build-appimage@master
 #        with:
 #          recipe: build/AppImageBuilder_amd64.yml
         run: |
           ./appimage-builder-x86_64.AppImage --recipe build/AppImageBuilder_amd64.yml
+          mv LiveRecorder* build/LiveRecorder
 
-      - name: Arm64 Build
+      - name: Arm64 build
         if: ${{ matrix.arch == 'arm64' }}
 #        uses: AppImageCrafters/build-appimage@master
 #        with:
 #          recipe: build/AppImageBuilder_arm64.yml
         run: |
           ./appimage-builder-x86_64.AppImage --recipe build/AppImageBuilder_arm64.yml
+          mv LiveRecorder* build/LiveRecorder
 
-      - name: Upload Artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: LiveRecorder_${{ runner.os }}_${{ matrix.arch }}_${{ github.ref_name }}
           path: |
             config.sample.json
-            LiveRecorder*
+            build/LiveRecorder*
 
-      - name: Create Archive
+      - name: Create archive
         if: startsWith(github.ref_name, 'v')
         uses: thedoctor0/zip-release@main
         with:
           filename: LiveRecorder_${{ runner.os }}_${{ matrix.arch }}_${{ github.ref_name }}.zip
           path: |
             config.sample.json
-            LiveRecorder*
+            build/LiveRecorder*
 
       - name: Release
         if: startsWith(github.ref_name, 'v')
