@@ -13,29 +13,19 @@
       "cookies": "SESSDATA=xxxxx; bili_jct=xxxxx"
     },
     {
-      "platform": "Bilibili",
-      "id": "25600815",
-      "name": "MKLNtic"
-    },
-    {
       "platform": "Douyu",
       "id": "101",
       "name": "PDD"
     },
     {
+      "platform": "Huya",
+      "id": "991111",
+      "name": "TheShy"
+    },
+    {
       "platform": "Youtube",
       "id": "UCShXNLMXCfstmWKH_q86B8w",
       "name": "斑比鹿乃"
-    },
-    {
-      "platform": "Youtube",
-      "id": "UCfuz6xYbYFGsWWBi3SpJI1w",
-      "name": "桜帆鹿乃"
-    },
-    {
-      "platform": "Youtube",
-      "id": "UCN3M-Nwa-eaZuMhPb5c3Pww",
-      "name": "MKLNtic"
     },
     {
       "platform": "Twitch",
@@ -52,11 +42,6 @@
       "platform": "Afreeca",
       "id": "legendhyuk",
       "name": "legendhyuk"
-    },
-    {
-      "platform": "Huya",
-      "id": "991111",
-      "name": "TheShy"
     }
   ]
 }

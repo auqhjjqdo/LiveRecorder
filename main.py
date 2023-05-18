@@ -34,9 +34,10 @@ class LiveRecoder:
 
         self.interval = user.get('interval', 10)
         self.headers = user.get('headers', {'User-Agent': 'Chrome'})
-        self.cookies = self.get_cookies(user.get('cookies', ''))
+        self.cookies = user.get('cookies')
         self.format = user.get('format')
 
+        self.get_cookies()
         self.client = self.get_client()
 
     async def start(self):
@@ -44,15 +45,14 @@ class LiveRecoder:
         while True:
             try:
                 await self.run()
-            except httpx.ProtocolError:
+                await asyncio.sleep(self.interval)
+            except ConnectionError as error:
+                if '直播检测请求协议错误' not in str(error):
+                    logger.error(error)
                 await self.client.aclose()
                 self.client = self.get_client()
-            except ConnectionError as error:
-                logger.error(error)
             except Exception as error:
                 logger.exception(f'{self.flag}直播检测未知错误\n{repr(error)}')
-            finally:
-                await asyncio.sleep(self.interval)
 
     async def run(self):
         pass
@@ -63,7 +63,7 @@ class LiveRecoder:
             response.raise_for_status()
             return response
         except httpx.ProtocolError as error:
-            raise httpx.ProtocolError(f'{self.flag}直播检测请求协议错误\n{error}')
+            raise ConnectionError(f'{self.flag}直播检测请求协议错误\n{error}')
         except httpx.HTTPStatusError as error:
             raise ConnectionError(f'{self.flag}直播检测请求状态码错误\n{error}\n{response.text}')
         except httpx.HTTPError as error:
@@ -79,14 +79,11 @@ class LiveRecoder:
             cookies=self.cookies
         )
 
-    @staticmethod
-    def get_cookies(cookies_str: str):
-        if cookies_str:
+    def get_cookies(self):
+        if self.cookies:
             cookies = SimpleCookie()
-            cookies.load(cookies_str)
-            return {k: v.value for k, v in cookies.items()}
-        else:
-            return {}
+            cookies.load(self.cookies)
+            self.cookies = {k: v.value for k, v in cookies.items()}
 
     def get_filename(self, title, format):
         live_time = time.strftime('%Y.%m.%d %H.%M.%S')
@@ -227,6 +224,29 @@ class Douyu(LiveRecoder):
         return f"{response['data']['rtmp_url']}/{response['data']['rtmp_live']}"
 
 
+class Huya(LiveRecoder):
+    async def run(self):
+        url = f'https://www.huya.com/{self.id}'
+        if url not in recording:
+            response = (await self.request(
+                method='GET',
+                url=url
+            )).text
+            if result := re.search(r'stream: \s*(.*?)\n', response).group(1):
+                info = json.loads(result)
+                if not info.get('vMultiStreamInfo'):
+                    return
+                title = info.get('data')[0].get('gameLiveInfo').get('introduction')
+                streams = self.get_streamlink().streams(url)  # HTTPStream[flv]
+                if 'source_al' in streams:
+                    stream = streams.get('source_al')
+                elif 'source_tx' in streams:
+                    stream = streams.get('source_tx')
+                else:
+                    stream = streams.get('best')
+                await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
+
+
 class Youtube(LiveRecoder):
     async def run(self):
         response = (await self.request(
@@ -320,37 +340,12 @@ class Afreeca(LiveRecoder):
             response = (await self.request(
                 method='POST',
                 url='https://live.afreecatv.com/afreeca/player_live_api.php',
-                data={"bid": self.id, "mode": "landing", "player_type": "html5"}
+                data={'bid': self.id}
             )).json()
-            if response.get("CHANNEL").get("RESULT") != 0:
-                title = response.get("CHANNEL").get("TITLE")
-                stream = self.get_streamlink().streams(url).get('best')
+            if response['CHANNEL']['RESULT'] != 0:
+                title = response['CHANNEL']['TITLE']
+                stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
-
-
-class Huya(LiveRecoder):
-    async def run(self):
-        url = f'https://www.huya.com/{self.id}'
-        if url not in recording:
-            response = (await self.request(
-                method='GET',
-                url=url
-            ))
-            pattern = "stream: \s*(.*?)\n"
-            result = re.search(pattern, response.text)
-            if result and result.group(1):
-                info = json.loads(result.group(1))
-                if not info.get("vMultiStreamInfo"):
-                    return
-                title = info.get("data")[0].get("gameLiveInfo").get("introduction")
-                streams = self.get_streamlink().streams(url)
-                if 'source_al' in streams:
-                    stream = streams.get("source_al")
-                elif 'source_tx' in streams:
-                    stream = streams.get("source_tx")
-                else:
-                    stream = streams.get("best")
-                await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
 
 
 async def run():

@@ -23,12 +23,18 @@
 
 - [x] 哔哩哔哩
 - [x] 斗鱼
+- [x] 虎牙
 - [x] YouTube
 - [x] Twitch
 - [x] TwitCasting
 - [x] Afreeca
-- [x] 虎牙
 - [ ] 更多平台欢迎PR
+
+## 已知bug
+
+- YouTube在录制单个频道多开直播间时会出现频繁中断，暂时无法修复
+- 斗鱼直播因使用js引擎可能出现偶发的解析错误，会自动重试录制
+
 
 ## 使用
 
@@ -80,20 +86,19 @@ python3 -m main.py
 
 无需代理时去除引号填写`null`或删除该字段即可
 
-
 ### 直播录制配置
 
 按照示例修改`user`列表，注意逗号、引号和缩进
 
-| 字段       | 含义          | 可填内容                                                                                        | 是否必填 | 备注                          |
-|----------|-------------|---------------------------------------------------------------------------------------------|------|-----------------------------|
-| platform | 直播平台        | `Bilibili`<br/>`Douyu`<br/>`Youtube`<br/>`Twitch`<br/>`Twitcasting`                         | 必填   | 必须为首字母大写                    |
-| id       | 对应平台的直播用户id | 哔哩哔哩、斗鱼为直播间房间号<br/>youtube为频道id<br/>twitch为登录名<br/>twitcasting为用户名                          | 必填   | 参考config文件示例格式<br/>直播网址即可找到 |
-| name     | 自定义主播名      | 任意字符                                                                                        | 非必填  | 用于录制文件区分<br/>未填写时默认使用id     |
-| interval | 检测间隔        | 任意整数或小数                                                                                     | 非必填  | 默认检测间隔为10秒                  |
-| format   | 输出格式        | 例如`ts`、`flv`、`mp4`、`mkv`等<br/>详见[FFmpeg官方文档](https://ffmpeg.org/ffmpeg-formats.html#Muxers) | 非必填  | 默认使用直播平台的直播流输出格式            |
-| headers  | HTTP 标头     | 参考[官方文档](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers)                         | 非必填  | 可用于部分需请求头验证的网站              |
-| cookies  | HTTP Cookie | `key=value`<br/>多个cookie使用`;`分隔                                                             | 非必填  | 可用于录制需登录观看的直播               |
+| 字段       | 含义          | 可填内容                                                                                        | 是否必填 | 备注                             |
+|----------|-------------|---------------------------------------------------------------------------------------------|------|--------------------------------|
+| platform | 直播平台        | 直播平台的英文名或拼音                                                                                 | 必填   | 必须为首字母大写                       |
+| id       | 直播用户id      | 直播平台的房间号或用户名                                                                                | 必填   | 参考config文件示例格式<br/>一般在直播网址即可找到 |
+| name     | 自定义主播名      | 任意字符                                                                                        | 非必填  | 用于录制文件区分<br/>未填写时默认使用id        |
+| interval | 检测间隔        | 任意整数或小数                                                                                     | 非必填  | 默认检测间隔为10秒                     |
+| format   | 输出格式        | 例如`ts`、`flv`、`mp4`、`mkv`等<br/>详见[FFmpeg官方文档](https://ffmpeg.org/ffmpeg-formats.html#Muxers) | 非必填  | 默认使用直播平台的直播流输出格式               |
+| headers  | HTTP 标头     | 参考[官方文档](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers)                         | 非必填  | 可用于部分需请求头验证的网站                 |
+| cookies  | HTTP Cookie | `key=value`<br/>多个cookie使用`;`分隔                                                             | 非必填  | 可用于录制需登录观看的直播                  |
 
 ### 注意事项
 
