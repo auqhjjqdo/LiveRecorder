@@ -232,18 +232,9 @@ class Huya(LiveRecoder):
                 method='GET',
                 url=url
             )).text
-            if result := re.search(r'stream: \s*(.*?)\n', response).group(1):
-                info = json.loads(result)
-                if not info.get('vMultiStreamInfo'):
-                    return
-                title = info.get('data')[0].get('gameLiveInfo').get('introduction')
-                streams = self.get_streamlink().streams(url)  # HTTPStream[flv]
-                if 'source_al' in streams:
-                    stream = streams.get('source_al')
-                elif 'source_tx' in streams:
-                    stream = streams.get('source_tx')
-                else:
-                    stream = streams.get('best')
+            if '"isOn":true' in response:
+                title = re.search('"introduction":"(.*?)"', response).group(1)
+                stream = self.get_streamlink().streams(url).get('best')  # HTTPStream[flv]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
 
 
