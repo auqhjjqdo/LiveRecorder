@@ -105,10 +105,14 @@ class LiveRecoder:
         return filename
 
     def get_streamlink(self, plugin_option: dict = None):
-        session = streamlink.Streamlink()
+        session = streamlink.Streamlink(options={
+            'stream-segment-attempts': 10,
+            'stream-segment-timeout': 60,
+        })
         # 添加streamlink的http相关选项
         for arg in ('proxy', 'headers', 'cookies'):
             if attr := getattr(self, arg):
+                # 代理为socks5时，streamlink的代理参数需要改为socks5h，防止部分直播源获取失败
                 if 'socks' in attr:
                     attr = attr.replace('://', 'h://')
                 session.set_option(f'http-{arg}', attr)
