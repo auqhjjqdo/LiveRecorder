@@ -106,8 +106,9 @@ class LiveRecoder:
 
     def get_streamlink(self, plugin_option: dict = None):
         session = streamlink.Streamlink(options={
-            'stream-segment-attempts': 10,
-            'stream-segment-timeout': 60,
+            'stream-timeout': 180,
+            'stream-segment-attempts': 20,
+            'hls-playlist-reload-attempts': 20
         })
         # 添加streamlink的http相关选项
         for arg in ('proxy', 'headers', 'cookies'):
