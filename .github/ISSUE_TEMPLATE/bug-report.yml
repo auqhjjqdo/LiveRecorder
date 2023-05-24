@@ -1,0 +1,64 @@
+name: 错误报告
+description: 请在此按照格式提交bug，未按格式将直接关闭
+title: '[Bug]: '
+labels: [ 'bug' ]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 错误报告注意事项
+
+        - 确定没有相同问题的issue已被提出，否则将被立即关闭
+        - 请准确填写运行环境信息，方便开发者定位问题
+        - 请提交完整的相关错误日志，包括具体的堆栈和上下文
+        - 按照[《提问的智慧》](https://github.com/ryanhanwu/How-To-Ask-Questions-The-Smart-Way/blob/main/README-zh_CN.md)中的要求准确描述错误信息
+
+  - type: textarea
+    attributes:
+      label: 运行环境
+      description: 请准确填写运行环境
+      value: |
+        版本号：
+        运行平台：
+        运行架构：
+        Python版本：
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: 配置文件
+      description: 请填写config.json文件的内容，注意删除cookie等敏感信息
+      render: JSON
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: 复现步骤（可选）
+      description: 请按序号填写具体的bug复现步骤
+      value: |
+        1.
+        2.
+        3.
+        ...
+
+  - type: textarea
+    attributes:
+      label: 错误描述
+      description: 请提供详细的错误描述和具体发生的现象
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: 错误日志
+      description: 请提供详细的错误日志，或直接打包上传logs文件夹
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: 错误截图（可选）
+      description: 请直接将错误现象的相关截图粘贴到文本框中
