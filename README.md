@@ -102,13 +102,17 @@ python3 -m main.py
 
 ### 注意事项
 
-#### Bilibili的房间号
+#### 哔哩哔哩的房间号
 
 部分主播的B站房间号在使用网页打开时地址栏默认显示的是短号，并不是真实的房间号，如需获取真实房间号可以打开
 
 `https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo?room_id=短号`
 
 返回的数据中`room_id`后的数字即真实房间号
+
+#### 斗鱼的房间号
+
+斗鱼直播同哔哩哔哩在部分直播间的房间号显示的是短号，获取真实房间号可打开F12开发者工具，在控制台输入`room_id`，返回的数字即真实房间号
 
 #### YouTube的频道ID
 
