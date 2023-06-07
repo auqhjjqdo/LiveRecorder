@@ -30,6 +30,7 @@ class LiveRecoder:
         self.id = user['id']
         platform = user['platform']
         name = user.get('name', self.id)
+        self.name = name
         self.flag = f'[{platform}][{name}]'
 
         self.interval = user.get('interval', 10)
@@ -332,12 +333,12 @@ class Twitcasting(LiveRecoder):
 
 class Afreeca(LiveRecoder):
     async def run(self):
-        url = f'https://play.afreecatv.com/{self.id}'
+        url = f'https://play.afreecatv.com/{self.name}/{self.id}'
         if url not in recording:
             response = (await self.request(
                 method='POST',
                 url='https://live.afreecatv.com/afreeca/player_live_api.php',
-                data={'bid': self.id}
+                data={'bid': self.name}
             )).json()
             if response['CHANNEL']['RESULT'] != 0:
                 title = response['CHANNEL']['TITLE']
