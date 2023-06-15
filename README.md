@@ -24,6 +24,7 @@
 - [x] 哔哩哔哩
 - [x] 斗鱼
 - [x] 虎牙
+- [x] 抖音
 - [x] YouTube
 - [x] Twitch
 - [x] TwitCasting

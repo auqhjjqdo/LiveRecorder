@@ -3,6 +3,7 @@ import json
 import os
 import re
 import time
+import urllib
 import uuid
 from http.cookies import SimpleCookie
 from pathlib import Path
@@ -242,6 +243,27 @@ class Huya(LiveRecoder):
             if '"isOn":true' in response:
                 title = re.search('"introduction":"(.*?)"', response).group(1)
                 stream = self.get_streamlink().streams(url).get('best')  # HTTPStream[flv]
+                await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
+
+
+class Douyin(LiveRecoder):
+    async def run(self):
+        url = f'https://live.douyin.com/{self.id}'
+        if url not in recording:
+            response = (await self.request(
+                method='GET',
+                url=url,
+                cookies={'__ac_nonce': uuid.uuid4().hex[:21]}
+            )).text
+            result = re.search('<script id="RENDER_DATA".*?>(.*?)</script>', response).group(1)
+            data = json.loads(urllib.parse.unquote(result))
+            room_info = data['app']['initialState']['roomStore']['roomInfo']
+            if web_stream_url := room_info['web_stream_url']:
+                title = room_info['room']['title']
+                stream = HTTPStream(
+                    self.get_streamlink(),
+                    web_stream_url['flv_pull_url']['FULL_HD1']
+                )  # HTTPStream[flv]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
 
 
