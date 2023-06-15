@@ -6,3 +6,4 @@ git+https://github.com/JamzumSum/socksio.git
 jsonpath-ng
 jsengine
 quickjs
+tenacity
