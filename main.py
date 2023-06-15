@@ -28,6 +28,7 @@ recording: Dict[str, Tuple[StreamIO, FileOutput]] = {}
 class LiveRecoder:
     def __init__(self, config: dict, user: dict):
         self.proxy = config.get('proxy')
+        self.output = config.get('output', 'output')
 
         self.id = user['id']
         platform = user['platform']
@@ -141,7 +142,7 @@ class LiveRecoder:
 
     def stream_writer(self, stream, url, filename):
         logger.info(f'{self.flag}获取到直播流链接：{filename}\n{stream.url}')
-        output = FileOutput(Path(f'output/{filename}'))
+        output = FileOutput(Path(f'{self.output}/{filename}'))
         try:
             stream_fd, prebuffer = open_stream(stream)
             output.open()
@@ -160,13 +161,13 @@ class LiveRecoder:
     def run_ffmpeg(self, filename, format):
         logger.info(f'{self.flag}开始ffmpeg封装：{filename}')
         new_filename = filename.replace(f'.{format}', f'.{self.format}')
-        ffmpeg.input(f'output/{filename}').output(
-            f'output/{new_filename}',
+        ffmpeg.input(f'{self.output}/{filename}').output(
+            f'{self.output}/{new_filename}',
             codec='copy',
             map_metadata='-1',
             movflags='faststart'
         ).global_args('-hide_banner').run()
-        os.remove(f'output/{filename}')
+        os.remove(f'{self.output}/{filename}')
 
 
 class Bilibili(LiveRecoder):
