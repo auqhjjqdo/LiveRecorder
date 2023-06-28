@@ -8,6 +8,8 @@
       "name": "鹿乃",
       "interval": 10,
       "format": "mp4",
+      "output": "bilibili_鹿乃",
+      "proxy": "socks5://127.0.0.1:7890",
       "headers": {
         "Referer": "https://live.bilibili.com/"
       },
