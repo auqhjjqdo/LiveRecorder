@@ -30,7 +30,7 @@ jobs:
           pip3 install -r requirements.txt
 
       - name: Pyinstaller build
-        run: pyinstaller build/main.spec --distpath build
+        run: pyinstaller build/main.spec --distpath .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
@@ -38,7 +38,7 @@ jobs:
           name: LiveRecorder_${{ runner.os }}_${{ github.ref_name }}
           path: |
             config.sample.json
-            build/LiveRecorder*
+            LiveRecorder*
 
       - name: Create archive
         if: startsWith(github.ref_name, 'v')
@@ -47,7 +47,7 @@ jobs:
           filename: LiveRecorder_${{ runner.os }}_${{ github.ref_name }}.zip
           path: |
             config.sample.json
-            build/LiveRecorder*
+            LiveRecorder*
 
       - name: Release
         if: startsWith(github.ref_name, 'v')
@@ -85,7 +85,7 @@ jobs:
 #          recipe: build/AppImageBuilder_amd64.yml
         run: |
           ./appimage-builder-x86_64.AppImage --recipe build/AppImageBuilder_amd64.yml
-          mv LiveRecorder* build/LiveRecorder
+          mv LiveRecorder* LiveRecorder
 
       - name: Arm64 build
         if: ${{ matrix.arch == 'arm64' }}
@@ -94,7 +94,7 @@ jobs:
 #          recipe: build/AppImageBuilder_arm64.yml
         run: |
           ./appimage-builder-x86_64.AppImage --recipe build/AppImageBuilder_arm64.yml
-          mv LiveRecorder* build/LiveRecorder
+          mv LiveRecorder* LiveRecorder
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
@@ -102,7 +102,7 @@ jobs:
           name: LiveRecorder_${{ runner.os }}_${{ matrix.arch }}_${{ github.ref_name }}
           path: |
             config.sample.json
-            build/LiveRecorder*
+            LiveRecorder*
 
       - name: Create archive
         if: startsWith(github.ref_name, 'v')
@@ -111,7 +111,7 @@ jobs:
           filename: LiveRecorder_${{ runner.os }}_${{ matrix.arch }}_${{ github.ref_name }}.zip
           path: |
             config.sample.json
-            build/LiveRecorder*
+            LiveRecorder*
 
       - name: Release
         if: startsWith(github.ref_name, 'v')
