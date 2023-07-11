@@ -257,12 +257,12 @@ class Douyin(LiveRecoder):
             )).text
             result = re.search('<script id="RENDER_DATA".*?>(.*?)</script>', response).group(1)
             data = json.loads(urllib.parse.unquote(result))
-            room_info = data['app']['initialState']['roomStore']['roomInfo']
-            if web_stream_url := room_info['web_stream_url']:
-                title = room_info['room']['title']
+            initial_state = data['app']['initialState']
+            if stream := initial_state['streamStore']['streamData']['H264_streamData']['stream']:
+                title = initial_state['roomStore']['roomInfo']['room']['title']
                 stream = HTTPStream(
                     self.get_streamlink(),
-                    web_stream_url['flv_pull_url']['FULL_HD1']
+                    stream['origin']['main']['flv']
                 )  # HTTPStream[flv]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
 
