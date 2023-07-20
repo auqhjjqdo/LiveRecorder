@@ -55,6 +55,7 @@ body:
     attributes:
       label: 错误日志
       description: 请提供详细的错误日志，或直接打包上传logs文件夹
+      render: Text
     validations:
       required: true
 
