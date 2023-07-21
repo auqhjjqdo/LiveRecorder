@@ -7,6 +7,8 @@ on:
     paths-ignore:
       - 'README.md'
       - '.github/**'
+    tags:
+      - 'v*'
 
 jobs:
   desktop-build:
