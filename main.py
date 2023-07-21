@@ -121,7 +121,7 @@ class LiveRecoder:
                     attr = attr.replace('://', 'h://')
                 session.set_option(f'http-{arg}', attr)
         if plugin_option:
-            session.set_plugin_option(**plugin_option)
+            session.set_option(**plugin_option)
         return session
 
     def run_record(self, stream: Union[StreamIO, HTTPStream], url, title, format):
@@ -148,12 +148,17 @@ class LiveRecoder:
             recording[url] = (stream_fd, output)
             logger.info(f'{self.flag}正在录制：{filename}')
             StreamRunner(stream_fd, output, show_progress=True).run(prebuffer)
-        except BrokenPipeError as error:
-            logger.error(f'{self.flag}管道损坏错误：{filename}\n{error}')
         except OSError as error:
-            logger.error(f'{self.flag}文件写入错误：{filename}\n{error}')
+            if 'timeout' in str(error):
+                logger.warning(f'{self.flag}直播录制超时，主播可能已下播：{filename}\n{error}')
+            else:
+                logger.error(f'{self.flag}OS错误：{filename}\n{error}')
+        except streamlink.StreamError as error:
+            logger.warning(f'{self.flag}直播流错误，请检查主播是否正常开播：{filename}\n{error}')
+        except streamlink.StreamlinkError as error:
+            logger.exception(f'{self.flag}streamlink错误：{filename}\n{error}')
         except Exception as error:
-            logger.exception(f'{self.flag}直播录制未知错误\n{error}')
+            logger.exception(f'{self.flag}直播录制未知错误：{filename}\n{error}')
         finally:
             output.close()
 
