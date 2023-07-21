@@ -130,9 +130,9 @@ class LiveRecoder:
         if stream:
             logger.info(f'{self.flag}开始录制：{filename}')
             # 调用streamlink录制直播
-            self.stream_writer(stream, url, filename)
-            # format配置存在且不等于直播平台默认格式时运行ffmpeg封装
-            if self.format and self.format != format:
+            result = self.stream_writer(stream, url, filename)
+            # 录制成功、format配置存在且不等于直播平台默认格式时运行ffmpeg封装
+            if result and self.format and self.format != format:
                 self.run_ffmpeg(filename, format)
             recording.pop(url, None)
             logger.info(f'{self.flag}停止录制：{filename}')
@@ -148,6 +148,7 @@ class LiveRecoder:
             recording[url] = (stream_fd, output)
             logger.info(f'{self.flag}正在录制：{filename}')
             StreamRunner(stream_fd, output, show_progress=True).run(prebuffer)
+            return True
         except OSError as error:
             if 'timeout' in str(error):
                 logger.warning(f'{self.flag}直播录制超时，主播可能已下播：{filename}\n{error}')
