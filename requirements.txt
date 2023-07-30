@@ -7,3 +7,4 @@ jsonpath-ng
 jsengine
 quickjs
 tenacity
+python-dateutil

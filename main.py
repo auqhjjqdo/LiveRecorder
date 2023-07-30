@@ -9,7 +9,8 @@ from http.cookies import SimpleCookie
 from pathlib import Path
 from typing import Dict, Tuple, Union
 from urllib.parse import parse_qs
-
+import dateutil.parser
+import datetime
 import ffmpeg
 import httpx
 import jsengine
@@ -372,6 +373,22 @@ class Afreeca(LiveRecoder):
                 title = response['CHANNEL']['TITLE']
                 stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
+
+
+class NicoNico(LiveRecoder):
+    async def run(self):
+        url = f'https://live.nicovideo.jp/watch/{self.id}'
+        if url not in recording:
+            response = (await self.request(
+                method='GET',
+                url=url,
+            )).text
+            live_json = json.loads(re.search('<script type="application/ld\+json">(.*?)</script>', response).group(1))
+            end_time = dateutil.parser.parse(live_json['publication']['endDate']).astimezone(datetime.datetime.now().astimezone().tzinfo)
+            now_time = datetime.datetime.now(datetime.timezone.utc).astimezone()
+            if end_time > now_time:
+                stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
+                await asyncio.to_thread(self.run_record, stream, url, live_json['name'], 'flv')
 
 
 async def run():
