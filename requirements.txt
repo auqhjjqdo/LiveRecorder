@@ -1,0 +1,9 @@
+streamlink
+ffmpeg-python
+loguru
+httpx[http2]
+git+https://github.com/JamzumSum/socksio.git
+jsonpath-ng
+jsengine
+quickjs
+tenacity
