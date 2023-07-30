@@ -54,7 +54,7 @@ class LiveRecoder:
                 await self.client.aclose()
                 self.client = self.get_client()
             except Exception as error:
-                logger.exception(f'{self.flag}直播检测未知错误\n{repr(error)}')
+                logger.exception(f'{self.flag}直播检测错误\n{repr(error)}')
 
     async def run(self):
         pass
@@ -149,17 +149,13 @@ class LiveRecoder:
             logger.info(f'{self.flag}正在录制：{filename}')
             StreamRunner(stream_fd, output, show_progress=True).run(prebuffer)
             return True
-        except OSError as error:
-            if 'timeout' in str(error):
-                logger.warning(f'{self.flag}直播录制超时，主播可能已下播：{filename}\n{error}')
-            else:
-                logger.error(f'{self.flag}OS错误：{filename}\n{error}')
-        except streamlink.StreamError as error:
-            logger.warning(f'{self.flag}直播流错误，请检查主播是否正常开播：{filename}\n{error}')
-        except streamlink.StreamlinkError as error:
-            logger.exception(f'{self.flag}streamlink错误：{filename}\n{error}')
         except Exception as error:
-            logger.exception(f'{self.flag}直播录制未知错误：{filename}\n{error}')
+            if 'timeout' in str(error):
+                logger.warning(f'{self.flag}直播录制超时，请检查主播是否正常开播或网络连接是否正常：{filename}\n{error}')
+            elif re.search(f'(Unable to open URL|No data returned from stream)', str(error)):
+                logger.warning(f'{self.flag}直播流打开错误，请检查主播是否正常开播：{filename}\n{error}')
+            else:
+                logger.exception(f'{self.flag}直播录制错误：{filename}\n{error}')
         finally:
             output.close()
 
