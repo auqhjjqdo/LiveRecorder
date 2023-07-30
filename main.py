@@ -334,6 +334,22 @@ class Twitch(LiveRecoder):
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
 
+class Niconico(LiveRecoder):
+    async def run(self):
+        url = f'https://live.nicovideo.jp/watch/{self.id}'
+        if url not in recording:
+            response = (await self.request(
+                method='GET',
+                url=url
+            )).text
+            if '"content_status":"ON_AIR"' in response:
+                title = json.loads(
+                    re.search(r'<script type="application/ld\+json">(.*?)</script>', response).group(1)
+                )['name']
+                stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
+                await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
+
+
 class Twitcasting(LiveRecoder):
     async def run(self):
         url = f'https://twitcasting.tv/{self.id}'
@@ -369,22 +385,6 @@ class Afreeca(LiveRecoder):
                 title = response['CHANNEL']['TITLE']
                 stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
-
-
-class NicoNico(LiveRecoder):
-    async def run(self):
-        url = f'https://live.nicovideo.jp/watch/{self.id}'
-        if url not in recording:
-            response = (await self.request(
-                method='GET',
-                url=url,
-            )).text
-            live_json = json.loads(re.search('<script type="application/ld\+json">(.*?)</script>', response).group(1))
-            end_ts = datetime.strptime(live_json['publication']['endDate'], '%Y-%m-%dT%H:%M:%S%z').timestamp()
-            now_ts = datetime.now().timestamp()
-            if end_ts > now_ts:
-                stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
-                await asyncio.to_thread(self.run_record, stream, url, live_json['name'], 'flv')
 
 
 async def run():

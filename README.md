@@ -23,6 +23,7 @@
 - [x] 抖音
 - [x] YouTube
 - [x] Twitch
+- [x] NicoNico
 - [x] TwitCasting
 - [x] Afreeca
 - [ ] 更多平台欢迎PR
@@ -127,6 +128,12 @@ YouTube的频道ID一般是由`UC`开头的一段字符，由于YouTube可以自
 
 获取YouTube的频道ID可以在打开频道主页后，按F12打开开发者工具，在控制台输入`ytInitialData.metadata.channelMetadataRenderer.externalId`
 ，返回的字符即YouTube的频道ID
+
+#### NicoNico的用户ID和频道ID
+
+NicoNico的直播分为用户直播和频道直播，其ID分别以`co`和`ch`开头再加上一段数字，但NicoNico的直播间一般是以`lv`开头的视频ID，获取用户ID或频道ID可在F12开发者工具的控制台输入`NicoGoogleTagManagerDataLayer[0].content`，在返回的数据中`community_id`或`channel_id`的值即对应的用户ID或频道ID
+
+其中部分频道在使用频道ID时无法获取到最新直播，此问题暂时无解，请使用`lv`视频ID代替
 
 #### TwitCasting的检测间隔
 
