@@ -327,8 +327,7 @@ class Twitch(LiveRecoder):
             if response[0]['data']['user']['stream']:
                 title = response[0]['data']['user']['lastBroadcast']['title']
                 stream = self.get_streamlink(plugin_option={
-                    'plugin': 'twitch',
-                    'key': 'disable-ads',
+                    'key': 'twitch-disable-ads',
                     'value': True,
                 }).streams(url).get('best')  # HLSStream[mpegts]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
