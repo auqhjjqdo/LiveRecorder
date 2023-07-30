@@ -1,0 +1,44 @@
+name: 功能需求
+description: 请在此按照格式提交功能需求，未按格式将直接关闭
+title: '[Enhancement]: '
+labels: [ 'enhancement' ]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 功能需求注意事项
+
+        - 确定没有相同功能需求的issue已被提出，否则将被立即关闭
+        - 请准确完整填写需求描述，表达出你想实现的功能现象
+        - 不接受奇葩功能需求，请仔细思考该需求是否有其他替代方案
+        - 为保证程序稳定性和代码简洁性，暂不接受对代码破坏性较大的需求
+
+  - type: input
+    attributes:
+      label: 直播平台
+      description: 请填写你需要功能的直播平台或需新增的直播平台
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: 需求描述
+      description: 请按照上述注意事项要求填写需求描述
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: 操作步骤（可选）
+      description: 请按序号填写实现该功能需要的操作步骤
+      value: |
+        1.
+        2.
+        3.
+        ...
+
+  - type: textarea
+    attributes:
+      label: 需求截图（可选）
+      description: 请直接将需要的功能所呈现的现象的相关截图粘贴到文本框中
