@@ -4,13 +4,9 @@
 
 # LiveRecoder
 
-![License](https://img.shields.io/badge/License-MIT-green)
-![Python](https://img.shields.io/badge/Python-3.8+-blue)
-[![QQ群](https://img.shields.io/badge/QQ群-花寄云璃社-yellow)](https://jq.qq.com/?_wv=1027&k=71rz8gZy)
-
-[![鹿乃资源站](https://img.shields.io/badge/鹿乃资源站-brown)](https://kanosuki.com)
-[![鹿乃信息站](https://img.shields.io/badge/鹿乃信息站-brown)](https://kano.fan)
-
+<img src="https://img.shields.io/badge/License-MIT-green">
+<img src="https://img.shields.io/badge/Python-3.8+-blue">
+<img src="https://img.shields.io/github/stars/auqhjjqdo/LiveRecorder?style=social">
 
 </div>
 
