@@ -5,7 +5,6 @@ import re
 import time
 import urllib
 import uuid
-from datetime import datetime
 from http.cookies import SimpleCookie
 from pathlib import Path
 from typing import Dict, Tuple, Union
@@ -109,21 +108,20 @@ class LiveRecoder:
         return filename
 
     def get_streamlink(self, plugin_option: dict = None):
-        session = streamlink.Streamlink(options={
-            'stream-timeout': 180,
+        options = {
             'stream-segment-attempts': 20,
             'hls-playlist-reload-attempts': 20
-        })
+        }
         # 添加streamlink的http相关选项
         for arg in ('proxy', 'headers', 'cookies'):
             if attr := getattr(self, arg):
                 # 代理为socks5时，streamlink的代理参数需要改为socks5h，防止部分直播源获取失败
                 if 'socks' in attr:
                     attr = attr.replace('://', 'h://')
-                session.set_option(f'http-{arg}', attr)
+                options[f'http-{arg}'] = attr
         if plugin_option:
-            session.set_option(**plugin_option)
-        return session
+            options.update(plugin_option)
+        return streamlink.Streamlink(options)
 
     def run_record(self, stream: Union[StreamIO, HTTPStream], url, title, format):
         # 获取输出文件名
@@ -327,10 +325,9 @@ class Twitch(LiveRecoder):
             )).json()
             if response[0]['data']['user']['stream']:
                 title = response[0]['data']['user']['lastBroadcast']['title']
-                stream = self.get_streamlink(plugin_option={
-                    'key': 'twitch-disable-ads',
-                    'value': True,
-                }).streams(url).get('best')  # HLSStream[mpegts]
+                stream = self.get_streamlink(
+                    plugin_option={'twitch-disable-ads': True}
+                ).streams(url).get('best')  # HLSStream[mpegts]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
 
