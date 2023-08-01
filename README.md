@@ -63,7 +63,7 @@ cd LiveRecorder
 # 安装依赖
 python3 -m pip install .
 # 源码运行
-python3 -m main.py
+python3 -m live_recorder.py
 ```
 
 ## 配置

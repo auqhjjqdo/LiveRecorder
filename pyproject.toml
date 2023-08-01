@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "LiveRecorder"
+name = "live_recorder"
 version = "v2.20"
 description = "基于Streamlink的全自动直播录制工具，已支持哔哩哔哩、斗鱼、虎牙、抖音、YouTube、Twitch等"
 authors = ["auqhjjqdo <auqhjjqdo@qq.com>"]
