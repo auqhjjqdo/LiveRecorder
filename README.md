@@ -61,7 +61,7 @@ Mac和Linux arm64版本未实际测试，如果打包出错欢迎提issue
 git clone https://github.com/auqhjjqdo/LiveRecorder.git
 cd LiveRecorder
 # 安装依赖
-python3 -m pip install -r requirements.txt
+python3 -m pip install .
 # 源码运行
 python3 -m main.py
 ```

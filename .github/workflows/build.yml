@@ -29,7 +29,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip3 install pyinstaller wheel
-          pip3 install -r requirements.txt
+          pip3 install .
 
       - name: Pyinstaller build
         run: pyinstaller build/main.spec --distpath .
