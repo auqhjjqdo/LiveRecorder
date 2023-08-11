@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "live_recorder"
-version = "v2.20"
+version = "v2.21"
 description = "基于Streamlink的全自动直播录制工具，已支持哔哩哔哩、斗鱼、虎牙、抖音、YouTube、Twitch等"
 authors = ["auqhjjqdo <auqhjjqdo@qq.com>"]
 readme = "README.md"
@@ -12,7 +12,8 @@ keywords = ["LiveRecorder", "Live", "Streamlink", "Bilibili", "Douyu", "Douyin",
 
 [tool.poetry.dependencies]
 python = "^3.8"
-streamlink = "^6.0.0"
+#streamlink = "^6.0.1"
+streamlink = { git = "https://github.com/streamlink/streamlink" }
 httpx = { extras = ["http2"], version = "^0.24.1" }
 ffmpeg-python = "^0.2.0"
 loguru = "^0.7.0"

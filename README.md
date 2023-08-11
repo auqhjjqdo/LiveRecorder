@@ -12,7 +12,7 @@
 
 ## 简介
 
-一款直播录制脚本，基于强大的[Streamlink](https://streamlink.github.io)
+一款无人值守直播录制脚本，基于强大的[Streamlink](https://streamlink.github.io)
 实现多平台直播源录制，通过挖掘直播平台官方API以轮询方式实现直播开播检测，致力于用最少的代码实现最多的功能
 
 ## 已支持平台
@@ -30,7 +30,6 @@
 
 ## 已知bug
 
-- 抖音的部分直播间可能出现录制提示`Could not open stream: Unable to open URL`相关报错，正在尝试修复
 - YouTube在录制单个频道多开直播间时会出现频繁中断，暂时无法修复
 - 斗鱼直播因使用js引擎可能出现偶发的解析错误，会自动重试录制
 
