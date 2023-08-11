@@ -109,8 +109,8 @@ class LiveRecoder:
 
     def get_streamlink(self, plugin_option: dict = None):
         options = {
-            'stream-segment-attempts': 20,
-            'hls-playlist-reload-attempts': 20
+            'stream-segment-timeout': 60,
+            'hls-segment-queue-threshold': 10
         }
         # 添加streamlink的http相关选项
         for arg in ('proxy', 'headers', 'cookies'):
