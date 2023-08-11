@@ -5,8 +5,6 @@ script:
   - rm -rf appimage-build | true
   - mkdir -p AppDir/usr/src
   - cp live_recorder.py AppDir/usr/src
-  - mkdir -p AppDir/usr/share/icons
-  - cp build/bambino.png AppDir/usr/share/icons
   - python3.10 -m pip install --ignore-installed --prefix=/usr --root=AppDir .
 
 AppDir:
@@ -14,7 +12,6 @@ AppDir:
   app_info:
     id: LiveRecorder
     name: LiveRecorder
-    icon: bambino
     version: Linux
     exec: usr/bin/python3.10
     exec_args: '$APPDIR/usr/src/live_recorder.py $@'

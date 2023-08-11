@@ -1,14 +1,4 @@
-<div align="center">
-
-<img src="https://ae01.alicdn.com/kf/Hd20566dcf9e04a8baf615d58a1c97da76.png" width="150" height="150">
-
-# LiveRecoder
-
-<img src="https://img.shields.io/badge/License-MIT-green">
-<img src="https://img.shields.io/badge/Python-3.8+-blue">
-<img src="https://img.shields.io/github/stars/auqhjjqdo/LiveRecorder?style=social">
-
-</div>
+<img src="https://socialify.git.ci/auqhjjqdo/LiveRecorder/image?description=1&forks=1&issues=1&language=1&name=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Light" alt="LiveRecorder"/>
 
 ## 简介
 

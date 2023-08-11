@@ -30,7 +30,7 @@ exe = EXE(
     a.datas,
     [],
     name='LiveRecorder',
-    icon='bambino.ico',
+    icon='',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
