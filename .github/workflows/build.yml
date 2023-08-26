@@ -11,10 +11,10 @@ on:
       - 'v*'
 
 jobs:
-  desktop-build:
+  build:
     strategy:
       matrix:
-        os: [ macos-latest, windows-latest ]
+        os: [ windows-latest, macos-latest, ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
@@ -56,68 +56,3 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: ./LiveRecorder*.zip
-
-  linux-build:
-    strategy:
-      matrix:
-        arch: [ amd64, arm64 ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          sudo add-apt-repository universe
-          sudo apt install libfuse2
-          wget -q -O appimage-builder-x86_64.AppImage https://github.com/AppImageCrafters/appimage-builder/releases/download/v1.1.0/appimage-builder-1.1.0-x86_64.AppImage
-          chmod +x appimage-builder-x86_64.AppImage
-          pip3 install wheel
-
-      - name: Amd64 build
-        if: ${{ matrix.arch == 'amd64' }}
-#        uses: AppImageCrafters/build-appimage@master
-#        with:
-#          recipe: build/AppImageBuilder_amd64.yml
-        run: |
-          ./appimage-builder-x86_64.AppImage --recipe build/AppImageBuilder_amd64.yml
-          mv LiveRecorder* LiveRecorder
-
-      - name: Arm64 build
-        if: ${{ matrix.arch == 'arm64' }}
-#        uses: AppImageCrafters/build-appimage@master
-#        with:
-#          recipe: build/AppImageBuilder_arm64.yml
-        run: |
-          ./appimage-builder-x86_64.AppImage --recipe build/AppImageBuilder_arm64.yml
-          mv LiveRecorder* LiveRecorder
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: LiveRecorder_${{ runner.os }}_${{ matrix.arch }}_${{ github.ref_name }}
-          path: |
-            config.sample.json
-            LiveRecorder*
-
-      - name: Create archive
-        if: startsWith(github.ref_name, 'v')
-        uses: thedoctor0/zip-release@main
-        with:
-          filename: LiveRecorder_${{ runner.os }}_${{ matrix.arch }}_${{ github.ref_name }}.zip
-          path: |
-            config.sample.json
-            LiveRecorder*
-
-      - name: Release
-        if: startsWith(github.ref_name, 'v')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ./*.zip
-          generate_release_notes: true

@@ -33,13 +33,11 @@
 
 ### 下载
 
-当前支持Windows, Mac和Linux，请前往Release下载对应平台的可执行程序
+当前支持Windows, Mac和Linux平台（amd64架构），请前往Release下载对应平台的可执行程序
 
 [Release下载页面](https://github.com/auqhjjqdo/LiveRecorder/releases)
 
 下载解压后修改配置，直接运行二进制文件即可
-
-Mac和Linux arm64版本未实际测试，如果打包出错欢迎提issue
 
 ### 源码运行
 
