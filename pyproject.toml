@@ -12,8 +12,8 @@ keywords = ["LiveRecorder", "Live", "Streamlink", "Bilibili", "Douyu", "Douyin",
 
 [tool.poetry.dependencies]
 python = "^3.8"
-#streamlink = "^6.0.1"
-streamlink = { git = "https://github.com/streamlink/streamlink" }
+streamlink = "^6.1.0"
+#streamlink = { git = "https://github.com/streamlink/streamlink" }
 httpx = { extras = ["http2"], version = "^0.24.1" }
 ffmpeg-python = "^0.2.0"
 loguru = "^0.7.0"
