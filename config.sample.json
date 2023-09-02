@@ -55,6 +55,11 @@
       "platform": "Afreeca",
       "id": "legendhyuk",
       "name": "legendhyuk"
+    },
+    {
+      "platform": "Pandalive",
+      "id": "seeenv",
+      "name": "seeenv"
     }
   ]
 }

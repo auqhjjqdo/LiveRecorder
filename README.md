@@ -16,6 +16,7 @@
 - [x] NicoNico
 - [x] TwitCasting
 - [x] Afreeca
+- [x] Pandalive
 - [ ] 更多平台欢迎PR
 
 ## 已知bug

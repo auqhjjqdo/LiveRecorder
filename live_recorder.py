@@ -63,12 +63,9 @@ class LiveRecoder:
     async def request(self, method, url, **kwargs):
         try:
             response = await self.client.request(method, url, **kwargs)
-            response.raise_for_status()
             return response
         except httpx.ProtocolError as error:
             raise ConnectionError(f'{self.flag}直播检测请求协议错误\n{error}')
-        except httpx.HTTPStatusError as error:
-            raise ConnectionError(f'{self.flag}直播检测请求状态码错误\n{error}\n{response.text}')
         except httpx.HTTPError as error:
             raise ConnectionError(f'{self.flag}直播检测请求错误\n{repr(error)}')
 
@@ -380,6 +377,24 @@ class Afreeca(LiveRecoder):
             )).json()
             if response['CHANNEL']['RESULT'] != 0:
                 title = response['CHANNEL']['TITLE']
+                stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
+                await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
+
+
+class Pandalive(LiveRecoder):
+    async def run(self):
+        url = f'https://www.pandalive.co.kr/live/play/{self.id}'
+        if url not in recording:
+            response = (await self.request(
+                method='POST',
+                url='https://api.pandalive.co.kr/v1/live/play',
+                data={
+                    'action': 'watch',
+                    'userId': self.id
+                }
+            )).json()
+            if response['result']:
+                title = response['media']['title']
                 stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
