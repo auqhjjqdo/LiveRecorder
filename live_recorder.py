@@ -3,7 +3,6 @@ import json
 import os
 import re
 import time
-import urllib
 import uuid
 from http.cookies import SimpleCookie
 from pathlib import Path
@@ -248,22 +247,32 @@ class Douyin(LiveRecoder):
     async def run(self):
         url = f'https://live.douyin.com/{self.id}'
         if url not in recording:
+            if not self.client.cookies:
+                await self.client.get(url=url)  # 获取__ac_nonce
+                await self.client.get(url=url)  # 获取ttwid
             response = (await self.request(
                 method='GET',
-                url=url,
-                cookies={'__ac_nonce': uuid.uuid4().hex[:21]}
-            )).text
-            result = re.search('<script id="RENDER_DATA".*?>(.*?)</script>', response).group(1)
-            data = json.loads(urllib.parse.unquote(result))
-            initial_state = data['app']['initialState']
-            if initial_state['roomStore']['roomInfo']['web_stream_url']:
-                title = initial_state['roomStore']['roomInfo']['room']['title']
-                stream_data = initial_state['streamStore']['streamData']['H264_streamData']
-                stream = HTTPStream(
-                    self.get_streamlink(),
-                    stream_data['stream']['origin']['main']['flv']
-                )  # HTTPStream[flv]
-                await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
+                url='https://live.douyin.com/webcast/room/web/enter/',
+                params={
+                    'aid': 6383,
+                    'app_name': 'douyin_web',
+                    'device_platform': 'web',
+                    'browser_language': 'zh-CN',
+                    'browser_platform': 'Win32',
+                    'browser_name': 'Chrome',
+                    'browser_version': '100.0.0.0',
+                    'web_rid': self.id
+                },
+            )).json()
+            if data := response['data']['data']:
+                data = data[0]
+                if data['status'] == 2:
+                    title = data['title']
+                    stream = HTTPStream(
+                        self.get_streamlink(),
+                        data['stream_url']['flv_pull_url']['FULL_HD1']
+                    )  # HTTPStream[flv]
+                    await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
 
 
 class Youtube(LiveRecoder):
