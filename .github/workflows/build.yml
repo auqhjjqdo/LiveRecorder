@@ -32,7 +32,7 @@ jobs:
           pip3 install .
 
       - name: Pyinstaller build
-        run: pyinstaller build/main.spec --distpath .
+        run: pyinstaller build.spec --distpath .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3

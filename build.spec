@@ -6,7 +6,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['../live_recorder.py'],
+    ['live_recorder.py'],
     pathex=[],
     binaries=[],
     datas=collect_data_files('streamlink.plugins', include_py_files=True),

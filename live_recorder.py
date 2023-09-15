@@ -13,6 +13,7 @@ import ffmpeg
 import httpx
 import jsengine
 import streamlink
+from httpx_socks import AsyncProxyTransport
 from jsonpath_ng.ext import parse
 from loguru import logger
 from streamlink.stream import StreamIO, HTTPStream
@@ -72,8 +73,8 @@ class LiveRecoder:
         return httpx.AsyncClient(
             http2=True,
             timeout=self.interval,
-            proxies=self.proxy,
             limits=httpx.Limits(max_keepalive_connections=100, keepalive_expiry=self.interval * 2),
+            transport=AsyncProxyTransport.from_url(self.proxy),
             headers=self.headers,
             cookies=self.cookies
         )
