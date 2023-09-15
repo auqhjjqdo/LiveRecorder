@@ -1,35 +1,29 @@
-[tool.poetry]
-name = "live_recorder"
-version = "v2.21"
+[project]
+name = "LiveRecorder"
+version = "0.1.0"
 description = "基于Streamlink的全自动直播录制工具，已支持哔哩哔哩、斗鱼、虎牙、抖音、YouTube、Twitch等"
-authors = ["auqhjjqdo <auqhjjqdo@qq.com>"]
+authors = [
+    {name = "auqhjjqdo", email = "auqhjjqdo@qq.com"},
+]
+requires-python = ">=3.8,<3.11"
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
+keywords = ["LiveRecorder", "Live", "Streamlink", "Bilibili", "Douyu", "Douyin", "YouTube", "Twitch"]
+dependencies = [
+    "streamlink>=6.2.0",
+    "httpx[http2]>=0.25.0",
+    "ffmpeg-python>=0.2.0",
+    "loguru>=0.7.2",
+    "jsonpath-ng>=1.6.0",
+    "jsengine>=1.0.7.post1",
+    "quickjs>=1.19.2",
+    "tenacity>=8.2.3"
+]
+
+[project.urls]
 repository = "https://github.com/auqhjjqdo/LiveRecorder"
 documentation = "https://github.com/auqhjjqdo/LiveRecorder#readme"
-keywords = ["LiveRecorder", "Live", "Streamlink", "Bilibili", "Douyu", "Douyin", "YouTube", "Twitch"]
-
-
-[tool.poetry.dependencies]
-python = "^3.8"
-streamlink = "^6.1.0"
-#streamlink = { git = "https://github.com/streamlink/streamlink" }
-httpx = { extras = ["http2"], version = "^0.24.1" }
-ffmpeg-python = "^0.2.0"
-loguru = "^0.7.0"
-jsonpath-ng = "^1.5.3"
-jsengine = "^1.0.7.post1"
-quickjs = "^1.19.2"
-tenacity = "^8.2.2"
-#https://github.com/JamzumSum/socksio
-socksio = { path = "build/socksio-1.0.0-py3-none-any.whl" }
-
-
-[[tool.poetry.source]]
-name = "mirrors"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
-priority = "default"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
