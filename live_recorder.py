@@ -16,6 +16,7 @@ import streamlink
 from httpx_socks import AsyncProxyTransport
 from jsonpath_ng.ext import parse
 from loguru import logger
+from streamlink.options import Options
 from streamlink.stream import StreamIO, HTTPStream
 from streamlink_cli.main import open_stream
 from streamlink_cli.output import FileOutput
@@ -104,21 +105,19 @@ class LiveRecoder:
         filename = f'[{live_time}]{self.flag}{title}.{format}'
         return filename
 
-    def get_streamlink(self, plugin_option: dict = None):
-        options = {
+    def get_streamlink(self):
+        session = streamlink.session.Streamlink({
             'stream-segment-timeout': 60,
             'hls-segment-queue-threshold': 10
-        }
+        })
         # 添加streamlink的http相关选项
         for arg in ('proxy', 'headers', 'cookies'):
             if attr := getattr(self, arg):
                 # 代理为socks5时，streamlink的代理参数需要改为socks5h，防止部分直播源获取失败
                 if 'socks' in attr:
                     attr = attr.replace('://', 'h://')
-                options[f'http-{arg}'] = attr
-        if plugin_option:
-            options.update(plugin_option)
-        return streamlink.Streamlink(options)
+                session.set_option(f'http-{arg}', attr)
+        return session
 
     def run_record(self, stream: Union[StreamIO, HTTPStream], url, title, format):
         # 获取输出文件名
@@ -332,9 +331,9 @@ class Twitch(LiveRecoder):
             )).json()
             if response[0]['data']['user']['stream']:
                 title = response[0]['data']['user']['lastBroadcast']['title']
-                stream = self.get_streamlink(
-                    plugin_option={'twitch-disable-ads': True}
-                ).streams(url).get('best')  # HLSStream[mpegts]
+                options = Options()
+                options.set('disable-ads', True)
+                stream = self.get_streamlink().streams(url, options).get('best')  # HLSStream[mpegts]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
 
