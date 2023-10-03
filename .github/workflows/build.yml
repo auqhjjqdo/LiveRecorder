@@ -32,27 +32,32 @@ jobs:
           pip3 install .
 
       - name: Pyinstaller build
-        run: pyinstaller build.spec --distpath .
+        run: |
+          pyinstaller build.spec
+          cp config.sample.json dist/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: LiveRecorder_${{ runner.os }}_${{ github.ref_name }}
           path: |
-            config.sample.json
-            LiveRecorder*
+            dist/
 
       - name: Create archive
         if: startsWith(github.ref_name, 'v')
         uses: thedoctor0/zip-release@main
         with:
           filename: LiveRecorder_${{ runner.os }}_${{ github.ref_name }}.zip
+          directory: dist/
           path: |
-            config.sample.json
             LiveRecorder*
+            config.sample.json
 
       - name: Release
         if: startsWith(github.ref_name, 'v')
-        uses: softprops/action-gh-release@v1
+        uses: ncipollo/release-action@v1
         with:
-          files: ./LiveRecorder*.zip
+          artifacts: dist/LiveRecorder*.zip
+          allowUpdates: true
+          draft: true
+          generateReleaseNotes: true
