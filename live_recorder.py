@@ -17,7 +17,7 @@ from httpx_socks import AsyncProxyTransport
 from jsonpath_ng.ext import parse
 from loguru import logger
 from streamlink.options import Options
-from streamlink.stream import StreamIO, HTTPStream
+from streamlink.stream import StreamIO, HTTPStream, HLSStream
 from streamlink_cli.main import open_stream
 from streamlink_cli.output import FileOutput
 from streamlink_cli.streamrunner import StreamRunner
@@ -403,6 +403,9 @@ class Pandalive(LiveRecoder):
             response = (await self.request(
                 method='POST',
                 url='https://api.pandalive.co.kr/v1/live/play',
+                headers={
+                    'x-device-info': '{"t":"webPc","v":"1.0","ui":0}'
+                },
                 data={
                     'action': 'watch',
                     'userId': self.id
@@ -410,7 +413,11 @@ class Pandalive(LiveRecoder):
             )).json()
             if response['result']:
                 title = response['media']['title']
-                stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
+                streams = HLSStream.parse_variant_playlist(
+                    self.get_streamlink(),
+                    response['PlayList']['hls'][0]['url']
+                )
+                stream = list(streams.values())[0]  # HLSStream[mpegts]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
 
