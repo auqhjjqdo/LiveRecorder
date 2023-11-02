@@ -1,6 +1,5 @@
 name: 错误报告
 description: 请在此按照格式提交bug，未按格式将直接关闭
-title: '[Bug]: '
 labels: [ 'bug' ]
 
 body:

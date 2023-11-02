@@ -1,6 +1,5 @@
 name: 功能需求
 description: 请在此按照格式提交功能需求，未按格式将直接关闭
-title: '[Enhancement]: '
 labels: [ 'enhancement' ]
 
 body:
