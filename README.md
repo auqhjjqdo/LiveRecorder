@@ -17,6 +17,7 @@
 - [x] TwitCasting
 - [x] Afreeca
 - [x] Pandalive
+- [x] Bigolive
 - [ ] 更多平台欢迎PR
 
 ## 已知bug

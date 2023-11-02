@@ -421,6 +421,24 @@ class Pandalive(LiveRecoder):
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
 
+class Bigolive(LiveRecoder):
+    async def run(self):
+        url = f'https://www.bigo.tv/cn/{self.id}'
+        if url not in recording:
+            response = (await self.request(
+                method='POST',
+                url='https://ta.bigo.tv/official_website/studio/getInternalStudioInfo',
+                params={'siteId': self.id}
+            )).json()
+            if response['data']['alive']:
+                title = response['data']['roomTopic']
+                stream = HLSStream(
+                    session=self.get_streamlink(),
+                    url=response['data']['hls_src']
+                )  # HLSStream[mpegts]
+                await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
+
+
 async def run():
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.load(f)
