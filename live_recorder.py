@@ -294,26 +294,25 @@ class Youtube(LiveRecoder):
                 'context': {
                     'client': {
                         'hl': 'zh-CN',
-                        'clientName': 'WEB',
+                        'clientName': 'MWEB',
                         'clientVersion': '2.20230101.00.00',
                         'timeZone': 'Asia/Shanghai'
                     }
                 },
                 'browseId': self.id,
-                'params': 'EghmZWF0dXJlZPIGBAoCMgA%3D'
+                'params': 'EgdzdHJlYW1z8gYECgJ6AA%3D%3D'
             }
         )).json()
-        jsonpath = parse('$..channelFeaturedContentRenderer').find(response)
+        jsonpath = parse('$..videoWithContextRenderer').find(response)
         for match in jsonpath:
-            for item in match.value['items']:
-                video = item['videoRenderer']
-                if '"style": "LIVE"' in json.dumps(video):
-                    url = f"https://www.youtube.com/watch?v={video['videoId']}"
-                    title = video['title']['runs'][0]['text']
-                    if url not in recording:
-                        stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
-                        # FIXME:多开直播间中断
-                        asyncio.create_task(asyncio.to_thread(self.run_record, stream, url, title, 'ts'))
+            video = match.value
+            if '"style": "LIVE"' in json.dumps(video):
+                url = f"https://www.youtube.com/watch?v={video['videoId']}"
+                title = video['headline']['runs'][0]['text']
+                if url not in recording:
+                    stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
+                    # FIXME:多开直播间中断
+                    asyncio.create_task(asyncio.to_thread(self.run_record, stream, url, title, 'ts'))
 
 
 class Twitch(LiveRecoder):
