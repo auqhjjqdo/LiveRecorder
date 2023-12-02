@@ -104,11 +104,11 @@ class LiveRecoder:
             '?': '？',
             '/': '／',
             '\\': '＼',
-            '|': '｜',
+            '|': '｜'
         }
         for half, full in char_dict.items():
             title = title.replace(half, full)
-        filename = f'[{live_time}]{self.flag}{title}.{format}'
+        filename = f'[{live_time}]{self.flag}{title[:50]}.{format}'
         return filename
 
     def get_streamlink(self):
