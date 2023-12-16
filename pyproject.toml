@@ -10,7 +10,7 @@ readme = "README.md"
 license = {text = "MIT"}
 keywords = ["LiveRecorder", "Live", "Streamlink", "Bilibili", "Douyu", "Douyin", "YouTube", "Twitch"]
 dependencies = [
-    "streamlink>=6.4.2",
+    "streamlink>=6.5.0",
     "httpx[http2]>=0.25.2",
     "ffmpeg-python>=0.2.0",
     "loguru>=0.7.2",
