@@ -438,6 +438,22 @@ class Bigolive(LiveRecoder):
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
 
+class Pixivsketch(LiveRecoder):
+    async def run(self):
+        url = f'https://sketch.pixiv.net/{self.id}'
+        if url not in recording:
+            response = (await self.request(
+                method='GET',
+                url=f'https://sketch.pixiv.net/_next/data/9yFpS_JEo_sQWcZoqUqYd/{self.id}.json',
+                params={'id': self.id}
+            )).json()
+            initial_state = json.loads(response['pageProps']['initialState'])
+            if lives := initial_state['live']['lives']:
+                title = list(lives.values())[0]['name']
+                stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
+                await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
+
+
 async def run():
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.load(f)

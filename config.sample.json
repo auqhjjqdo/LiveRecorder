@@ -65,6 +65,12 @@
       "platform": "Bigolive",
       "id": "660801666",
       "name": "660801666"
+    },
+    {
+      "platform": "Pixivsketch",
+      "id": "@blue_gk",
+      "name": "@blue_gk",
+      "cookies": "_sketch_session=xxxxx"
     }
   ]
 }

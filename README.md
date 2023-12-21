@@ -18,6 +18,7 @@
 - [x] Afreeca
 - [x] Pandalive
 - [x] Bigolive
+- [x] Pixiv Sketch
 - [ ] 更多平台欢迎PR
 
 ## 已知bug
