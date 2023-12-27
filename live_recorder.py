@@ -117,12 +117,15 @@ class LiveRecoder:
             'hls-segment-queue-threshold': 10
         })
         # 添加streamlink的http相关选项
-        for arg in ('proxy', 'headers', 'cookies'):
-            if attr := getattr(self, arg):
-                # 代理为socks5时，streamlink的代理参数需要改为socks5h，防止部分直播源获取失败
-                if 'socks' in attr:
-                    attr = attr.replace('://', 'h://')
-                session.set_option(f'http-{arg}', attr)
+        if proxy := self.proxy:
+            # 代理为socks5时，streamlink的代理参数需要改为socks5h，防止部分直播源获取失败
+            if 'socks' in proxy:
+                proxy = proxy.replace('://', 'h://')
+            session.set_option('http-proxy', proxy)
+        if self.headers:
+            session.set_option('http-header', self.headers)
+        if self.cookies:
+            session.set_option('http-cookie', self.headers)
         return session
 
     def run_record(self, stream: Union[StreamIO, HTTPStream], url, title, format):
