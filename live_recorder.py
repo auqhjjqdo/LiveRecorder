@@ -444,10 +444,10 @@ class Pixivsketch(LiveRecoder):
         if url not in recording:
             response = (await self.request(
                 method='GET',
-                url=f'https://sketch.pixiv.net/_next/data/9yFpS_JEo_sQWcZoqUqYd/{self.id}.json',
-                params={'id': self.id}
-            )).json()
-            initial_state = json.loads(response['pageProps']['initialState'])
+                url=url
+            )).text
+            next_data = json.loads(re.search(r'<script id="__NEXT_DATA__".*?>(.*?)</script>', response)[1])
+            initial_state = json.loads(next_data['props']['pageProps']['initialState'])
             if lives := initial_state['live']['lives']:
                 title = list(lives.values())[0]['name']
                 stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
