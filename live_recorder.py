@@ -254,14 +254,12 @@ class Douyin(LiveRecoder):
         url = f'https://live.douyin.com/{self.id}'
         if url not in recording:
             if not self.client.cookies:
-                await self.client.get(url=url)  # 获取__ac_nonce
-                await self.client.get(url=url)  # 获取ttwid
+                await self.client.get(url='https://live.douyin.com/')  # 获取ttwid
             response = (await self.request(
                 method='GET',
                 url='https://live.douyin.com/webcast/room/web/enter/',
                 params={
                     'aid': 6383,
-                    'app_name': 'douyin_web',
                     'device_platform': 'web',
                     'browser_language': 'zh-CN',
                     'browser_platform': 'Win32',
