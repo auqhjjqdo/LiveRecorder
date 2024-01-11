@@ -71,20 +71,20 @@ class LiveRecoder:
             raise ConnectionError(f'{self.flag}直播检测请求错误\n{repr(error)}')
 
     def get_client(self):
+        client_kwargs = {
+            'http2': True,
+            'timeout': self.interval,
+            'limits': httpx.Limits(max_keepalive_connections=100, keepalive_expiry=self.interval * 2),
+            'headers': self.headers,
+            'cookies': self.cookies
+        }
         # 检查是否有设置代理
         if self.proxy:
-            transport = AsyncProxyTransport.from_url(self.proxy)
-        else:
-            transport = None
-
-        return httpx.AsyncClient(
-            http2=True,
-            timeout=self.interval,
-            limits=httpx.Limits(max_keepalive_connections=100, keepalive_expiry=self.interval * 2),
-            transport=transport,
-            headers=self.headers,
-            cookies=self.cookies
-        )
+            if 'socks' in self.proxy:
+                client_kwargs['transport'] = AsyncProxyTransport.from_url(self.proxy)
+            else:
+                client_kwargs['proxies'] = self.proxy
+        return httpx.AsyncClient(**client_kwargs)
 
     def get_cookies(self):
         if self.cookies:
