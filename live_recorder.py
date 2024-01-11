@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Dict, Tuple, Union
 from urllib.parse import parse_qs
 
+import anyio
 import ffmpeg
 import httpx
 import jsengine
@@ -67,6 +68,8 @@ class LiveRecoder:
             raise ConnectionError(f'{self.flag}直播检测请求协议错误\n{error}')
         except httpx.HTTPError as error:
             raise ConnectionError(f'{self.flag}直播检测请求错误\n{repr(error)}')
+        except anyio.EndOfStream as error:
+            raise ConnectionError(f'{self.flag}直播检测代理错误\n{error}')
 
     def get_client(self):
         client_kwargs = {
