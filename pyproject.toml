@@ -17,8 +17,7 @@ dependencies = [
     "jsonpath-ng>=1.6.0",
     "jsengine>=1.0.7.post1",
     "quickjs>=1.19.4",
-    "tenacity>=8.2.3",
-    "httpx-socks[asyncio]>=0.8.0"
+    "httpx-socks[asyncio]>=0.8.0",
 ]
 
 [project.urls]

@@ -21,7 +21,6 @@ from streamlink.stream import StreamIO, HTTPStream, HLSStream
 from streamlink_cli.main import open_stream
 from streamlink_cli.output import FileOutput
 from streamlink_cli.streamrunner import StreamRunner
-from tenacity import retry, stop_after_attempt
 
 recording: Dict[str, Tuple[StreamIO, FileOutput]] = {}
 
@@ -60,7 +59,6 @@ class LiveRecoder:
     async def run(self):
         pass
 
-    @retry(reraise=True, stop=stop_after_attempt(5))
     async def request(self, method, url, **kwargs):
         try:
             response = await self.client.request(method, url, **kwargs)
