@@ -123,9 +123,9 @@ class LiveRecoder:
                 proxy = proxy.replace('://', 'h://')
             session.set_option('http-proxy', proxy)
         if self.headers:
-            session.set_option('http-header', self.headers)
+            session.set_option('http-headers', self.headers)
         if self.cookies:
-            session.set_option('http-cookie', self.headers)
+            session.set_option('http-cookies', self.cookies)
         return session
 
     def run_record(self, stream: Union[StreamIO, HTTPStream], url, title, format):
