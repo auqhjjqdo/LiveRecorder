@@ -426,7 +426,7 @@ class Pandalive(LiveRecoder):
                 method='POST',
                 url='https://api.pandalive.co.kr/v1/live/play',
                 headers={
-                    'x-device-info': '{"t":"webPc","v":"1.0","ui":0}'
+                    'x-device-info': '{"t":"webMobile","v":"1.0","ui":0}'
                 },
                 data={
                     'action': 'watch',
@@ -435,11 +435,7 @@ class Pandalive(LiveRecoder):
             )).json()
             if response['result']:
                 title = response['media']['title']
-                streams = HLSStream.parse_variant_playlist(
-                    self.get_streamlink(),
-                    response['PlayList']['hls'][0]['url']
-                )
-                stream = list(streams.values())[0]  # HLSStream[mpegts]
+                stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
 
