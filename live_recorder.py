@@ -472,8 +472,13 @@ class Pixivsketch(LiveRecoder):
             next_data = json.loads(re.search(r'<script id="__NEXT_DATA__".*?>(.*?)</script>', response)[1])
             initial_state = json.loads(next_data['props']['pageProps']['initialState'])
             if lives := initial_state['live']['lives']:
-                title = list(lives.values())[0]['name']
-                stream = self.get_streamlink().streams(url).get('best')  # HLSStream[mpegts]
+                live = list(lives.values())[0]
+                title = live['name']
+                streams = HLSStream.parse_variant_playlist(
+                    session=self.get_streamlink(),
+                    url=live['owner']['hls_movie']
+                )
+                stream = list(streams.values())[0]  # HLSStream[mpegts]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
 
