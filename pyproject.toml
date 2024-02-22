@@ -10,14 +10,14 @@ readme = "README.md"
 license = {text = "MIT"}
 keywords = ["LiveRecorder", "Live", "Streamlink", "Bilibili", "Douyu", "Douyin", "YouTube", "Twitch"]
 dependencies = [
-    "streamlink>=6.5.0",
-    "httpx[http2]>=0.25.2",
+    "streamlink>=6.6.2",
+    "httpx[http2]>=0.26.0",
     "ffmpeg-python>=0.2.0",
     "loguru>=0.7.2",
-    "jsonpath-ng>=1.6.0",
+    "jsonpath-ng>=1.6.1",
     "jsengine>=1.0.7.post1",
     "quickjs>=1.19.4",
-    "httpx-socks[asyncio]>=0.8.0",
+    "httpx-socks[asyncio]>=0.8.1",
 ]
 
 [project.urls]
