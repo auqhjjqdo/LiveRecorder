@@ -187,30 +187,8 @@ class Bilibili(LiveRecoder):
             )).json()
             if response['data']['live_status'] == 1:
                 title = response['data']['title']
-                stream = HLSStream(
-                    self.get_streamlink(),
-                    await self.get_play_url()
-                )  # HLSStream[mpegts]
-                await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
-                # stream = self.get_streamlink().streams(url).get('best')  # HTTPStream[flv]
-                # await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
-
-    async def get_play_url(self):
-        response = (await self.request(
-            method='GET',
-            url='https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo',
-            params={
-                'room_id': self.id,
-                'protocol': '1',  # 0 = http_stream, 1 = http_hls
-                'format': '1',  # 0 = flv, 1 = ts, 2 = fmp4
-                'codec': '0',  # 0 = avc, 1 = hevc
-                'qn': 1000,
-                'platform': 'web'
-            }
-        )).json()
-        play_info = response['data']['playurl_info']['playurl']['stream'][0]['format'][0]['codec'][0]
-        url_info = play_info['url_info'][0]
-        return url_info['host'] + play_info['base_url'] + url_info['extra']
+                stream = self.get_streamlink().streams(url).get('best')  # HTTPStream[flv]
+                await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
 
 
 class Douyu(LiveRecoder):
