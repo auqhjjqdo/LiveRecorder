@@ -120,8 +120,12 @@ python3 live_recorder.py
 
 YouTube的频道ID一般是由`UC`开头的一段字符，由于YouTube可以自定义标识名，打开YouTube频道时网址会优先显示标识名而非频道ID
 
-获取YouTube的频道ID可以在打开频道主页后，按F12打开开发者工具，在控制台输入`ytInitialData.metadata.channelMetadataRenderer.externalId`
-，返回的字符即YouTube的频道ID
+获取YouTube的频道ID可以使用以下网站：
+
+https://seostudio.tools/zh/youtube-channel-id
+
+https://ytgear.com/youtube-channel-id
+
 
 #### NicoNico的用户ID和频道ID
 
