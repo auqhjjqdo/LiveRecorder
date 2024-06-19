@@ -71,6 +71,11 @@
       "id": "@blue_gk",
       "name": "@blue_gk",
       "cookies": "_sketch_session=xxxxx"
+    },
+    {
+      "platform": "Chaturbate",
+      "id": "abc123",
+      "name": "abc123"
     }
   ]
 }

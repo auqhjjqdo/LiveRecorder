@@ -455,6 +455,30 @@ class Pixivsketch(LiveRecoder):
                 )
                 stream = list(streams.values())[0]  # HLSStream[mpegts]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
+                
+
+class Chaturbate(LiveRecoder):
+    async def run(self):
+        url = f'https://chaturbate.com/{self.id}'    
+        if url not in recording:
+            response = (await self.request(
+                method='POST',
+                url='https://chaturbate.com/get_edge_hls_url_ajax/',
+                headers={
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                data={
+                    'room_slug': self.id
+                }
+            )).json()
+            if response['room_status'] == 'public':
+                title = self.id
+                streams = HLSStream.parse_variant_playlist(
+                    session=self.get_streamlink(),
+                    url=response['url']
+                )
+                stream = list(streams.values())[2] 
+                await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
 
 async def run():
