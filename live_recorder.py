@@ -276,9 +276,15 @@ class Douyin(LiveRecoder):
                 data = data[0]
                 if data['status'] == 2:
                     title = data['title']
+                    live_url = ''
+                    stream_data = json.loads(data['stream_url']['live_core_sdk_data']['pull_data']['stream_data'])
+                    for quality_code in ('origin', 'uhd', 'hd', 'sd', 'md', 'ld'):
+                        if quality_data := stream_data['data'].get(quality_code):
+                            live_url = quality_data['main']['flv']
+                            break
                     stream = HTTPStream(
                         self.get_streamlink(),
-                        data['stream_url']['flv_pull_url']['FULL_HD1']
+                        live_url
                     )  # HTTPStream[flv]
                     await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
 
@@ -455,11 +461,11 @@ class Pixivsketch(LiveRecoder):
                 )
                 stream = list(streams.values())[0]  # HLSStream[mpegts]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
-                
+
 
 class Chaturbate(LiveRecoder):
     async def run(self):
-        url = f'https://chaturbate.com/{self.id}'    
+        url = f'https://chaturbate.com/{self.id}'
         if url not in recording:
             response = (await self.request(
                 method='POST',
@@ -477,7 +483,7 @@ class Chaturbate(LiveRecoder):
                     session=self.get_streamlink(),
                     url=response['url']
                 )
-                stream = list(streams.values())[2] 
+                stream = list(streams.values())[2]
                 await asyncio.to_thread(self.run_record, stream, url, title, 'ts')
 
 
