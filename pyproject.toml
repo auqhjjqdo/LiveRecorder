@@ -10,20 +10,20 @@ readme = "README.md"
 license = {text = "MIT"}
 keywords = ["LiveRecorder", "Live", "Streamlink", "Bilibili", "Douyu", "Douyin", "YouTube", "Twitch"]
 dependencies = [
-    "streamlink>=6.6.2",
-    "httpx[http2]>=0.26.0",
+    "streamlink>=6.8.2",
+    "httpx[http2]>=0.27.0",
     "ffmpeg-python>=0.2.0",
     "loguru>=0.7.2",
     "jsonpath-ng>=1.6.1",
     "jsengine>=1.0.7.post1",
     "quickjs>=1.19.4",
-    "httpx-socks[asyncio]>=0.8.1",
+    "httpx-socks[asyncio]>=0.9.1",
 ]
 
 [project.urls]
 repository = "https://github.com/auqhjjqdo/LiveRecorder"
 documentation = "https://github.com/auqhjjqdo/LiveRecorder#readme"
 
-[build-system]
-requires = ["setuptools>=61", "wheel"]
-build-backend = "setuptools.build_meta"
+
+[tool.pdm]
+distribution = false
