@@ -51,8 +51,7 @@ class LiveRecoder:
         while True:
             try:
                 logger.info(f'{self.flag}正在检测直播状态')
-                live_h = int(time.strftime('%H'))
-                logger.info(f'当前时间:{live_h}点  预配置刷新间隔：{self.interval}s')
+                logger.info(f'预配置刷新间隔：{self.interval}s')
                 try:
                     await self.run()   
                 except Exception as run_error:
@@ -180,7 +179,7 @@ class LiveRecoder:
         except Exception as error:
             if 'timeout' in str(error):
                 logger.warning(f'{self.flag}直播录制超时，请检查主播是否正常开播或网络连接是否正常：{filename}\n{error}')
-            elif re.search(f'Caused by SSLError(SSLCertVerificationError', str(error)):
+            elif re.search(f'SSL: CERTIFICATE_VERIFY_FAILED', str(error)):
                 logger.warning(f'{self.flag}SSL错误，将取消SSL验证：{filename}\n{error}')
                 self.ssl = False
             elif re.search(f'(Unable to open URL|No data returned from stream)', str(error)):
