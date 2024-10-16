@@ -32,23 +32,36 @@ class LiveRecoder:
         platform = user['platform']
         name = user.get('name', self.id)
         self.flag = f'[{platform}][{name}]'
-
+        
         self.interval = user.get('interval', 10)
+        self.crypto_js_url = user.get('crypto_js_url', '')
         self.headers = user.get('headers', {'User-Agent': 'Chrome'})
         self.cookies = user.get('cookies')
         self.format = user.get('format')
         self.proxy = user.get('proxy', config.get('proxy'))
         self.output = user.get('output', config.get('output', 'output'))
-
+        if not self.crypto_js_url:
+            self.crypto_js_url = 'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js'
         self.get_cookies()
         self.client = self.get_client()
 
     async def start(self):
-        logger.info(f'{self.flag}正在检测直播状态')
+        self.ssl = True
+        self.mState = 0
         while True:
             try:
-                await self.run()
-                await asyncio.sleep(self.interval)
+                logger.info(f'{self.flag}正在检测直播状态')
+                logger.info(f'预配置刷新间隔：{self.interval}s')
+                try:
+                    await self.run()   
+                except Exception as run_error:
+                    logger.error(f"{self.flag}直播检测内部错误\n{repr(run_error)}")
+                state = self.mState
+                timeI = self.interval
+                if state == '1':
+                    timeI = 2
+                logger.info(f'->直播状态：{state}  实际刷新间隔：{timeI}s')
+                await asyncio.sleep(timeI)
             except ConnectionError as error:
                 if '直播检测请求协议错误' not in str(error):
                     logger.error(error)
@@ -66,10 +79,16 @@ class LiveRecoder:
             return response
         except httpx.ProtocolError as error:
             raise ConnectionError(f'{self.flag}直播检测请求协议错误\n{error}')
-        except httpx.HTTPError as error:
-            raise ConnectionError(f'{self.flag}直播检测请求错误\n{repr(error)}')
+        except httpx.HTTPStatusError as error:
+            raise ConnectionError(
+                f'{self.flag}直播检测请求状态码错误\n{error}\n{response.text}')
         except anyio.EndOfStream as error:
             raise ConnectionError(f'{self.flag}直播检测代理错误\n{error}')
+        except httpx.HTTPError as error:
+           logger.error(f'网络异常 重试...')
+           raise ConnectionError(f'{self.flag}直播检测请求错误\n{repr(error)}')
+		
+           
 
     def get_client(self):
         client_kwargs = {
@@ -117,6 +136,9 @@ class LiveRecoder:
             'stream-segment-timeout': 60,
             'hls-segment-queue-threshold': 10
         })
+        ssl = self.ssl
+        logger.info(f'是否验证SSL：{ssl}')
+        session.set_option('http-ssl-verify', ssl)
         # 添加streamlink的http相关选项
         if proxy := self.proxy:
             # 代理为socks5时，streamlink的代理参数需要改为socks5h，防止部分直播源获取失败
@@ -157,6 +179,9 @@ class LiveRecoder:
         except Exception as error:
             if 'timeout' in str(error):
                 logger.warning(f'{self.flag}直播录制超时，请检查主播是否正常开播或网络连接是否正常：{filename}\n{error}')
+            elif re.search(f'SSL: CERTIFICATE_VERIFY_FAILED', str(error)):
+                logger.warning(f'{self.flag}SSL错误，将取消SSL验证：{filename}\n{error}')
+                self.ssl = False
             elif re.search(f'(Unable to open URL|No data returned from stream)', str(error)):
                 logger.warning(f'{self.flag}直播流打开错误，请检查主播是否正常开播：{filename}\n{error}')
             else:
@@ -199,13 +224,21 @@ class Douyu(LiveRecoder):
                 method='GET',
                 url=f'https://open.douyucdn.cn/api/RoomApi/room/{self.id}',
             )).json()
-            if response['data']['room_status'] == '1':
-                title = response['data']['room_name']
-                stream = HTTPStream(
-                    self.get_streamlink(),
-                    await self.get_live()
-                )  # HTTPStream[flv]
-                await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
+            state = response['data']['room_status']
+            self.mState = state
+            logger.info(
+                f'直播状态[1已开播，2未开播]：{state} 上一次开播时间：{response["data"]["start_time"]}')
+            if state == '1':
+                liveUrl = await self.get_live()
+                if liveUrl != '':
+                    title = response['data']['room_name']
+                    stream = HTTPStream(
+                        self.get_streamlink(),
+                        liveUrl
+                    )  # HTTPStream[flv]
+                    await asyncio.to_thread(self.run_record, stream, url, title, 'flv')
+            else:
+                self.ssl = True
 
     async def get_js(self):
         response = (await self.request(
@@ -213,9 +246,10 @@ class Douyu(LiveRecoder):
             url=f'https://www.douyu.com/swf_api/homeH5Enc?rids={self.id}'
         )).json()
         js_enc = response['data'][f'room{self.id}']
+        getUrl = self.crypto_js_url
         crypto_js = (await self.request(
             method='GET',
-            url='https://cdn.staticfile.org/crypto-js/4.1.1/crypto-js.min.js'
+            url= getUrl
         )).text
         return jsengine.JSEngine(js_enc + crypto_js)
 
@@ -236,6 +270,9 @@ class Douyu(LiveRecoder):
             url=f'https://www.douyu.com/lapi/live/getH5Play/{self.id}',
             params=params
         )).json()
+        if response['data'] == '' and response['msg'] != '':
+            logger.info(f'直播状态：{response["error"]} {response["msg"]}')
+            return ''
         return f"{response['data']['rtmp_url']}/{response['data']['rtmp_live']}"
 
 
