@@ -23,27 +23,34 @@ from streamlink_cli.main import open_stream
 from streamlink_cli.output import FileOutput
 from streamlink_cli.streamrunner import StreamRunner
 
-recording: Dict[str, Tuple[StreamIO, FileOutput]] = {}
+import liquid,pytz
+from datetime import datetime
 
+recording: Dict[str, Tuple[StreamIO, FileOutput]] = {}
 
 class LiveRecoder:
     def __init__(self, config: dict, user: dict):
         self.id = user['id']
         platform = user['platform']
-        name = user.get('name', self.id)
-        self.flag = f'[{platform}][{name}]'
+        self.name = user.get('name', self.id)
+        self.flag = f'[{platform}][{self.name}]'
         
         self.interval = user.get('interval', 10)
         self.crypto_js_url = user.get('crypto_js_url', '')
         self.headers = user.get('headers', {'User-Agent': 'Chrome'})
         self.cookies = user.get('cookies')
-        self.format = user.get('format')
+        self.format = user.get('format', 'flv')
         self.proxy = user.get('proxy', config.get('proxy'))
         self.output = user.get('output', config.get('output', 'output'))
         if not self.crypto_js_url:
             self.crypto_js_url = 'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js'
         self.get_cookies()
         self.client = self.get_client()
+
+        # liquid过滤器
+        self.env = liquid.Environment()
+        self.env.add_filter('time_zone', self.time_zone)
+        self.env.add_filter('format_date', self.format_date)
 
     async def start(self):
         self.ssl = True
@@ -112,8 +119,26 @@ class LiveRecoder:
             cookies.load(self.cookies)
             self.cookies = {k: v.value for k, v in cookies.items()}
 
+    # 时区
+    def time_zone(self, value, tz_name):
+        tz = pytz.timezone(tz_name)
+        if isinstance(value, (int, float)):
+            value = datetime.fromtimestamp(value, tz)
+        elif isinstance(value, datetime):
+            value = value.astimezone(tz)
+        else:
+            raise TypeError(f"Unsupported type for time_zone filter: {type(value)}")
+        return value
+
+    # 时间格式
+    def format_date(self, value, date_format):
+        if isinstance(value, datetime):
+            return value.strftime(date_format)[:-3]
+        raise TypeError(f"Unsupported type for format_date filter: {type(value)}")
+
     def get_filename(self, title, format):
-        live_time = time.strftime('%Y.%m.%d %H.%M.%S')
+        title = title or "title"
+
         # 文件名特殊字符转换为全角字符
         char_dict = {
             '"': '＂',
@@ -128,8 +153,59 @@ class LiveRecoder:
         }
         for half, full in char_dict.items():
             title = title.replace(half, full)
+
+        # 调用模板处理
+        directory, filename = self.render_filename_template(title, format)
+
+        # 确保目录存在
+        try:
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+        except OSError as error:
+            raise OSError(f"路径创建失败: {directory}\n{error}")
+
+        return os.path.join(directory, filename)
+
+    def render_filename_template(self, title, format):
+        # 模板参数
+        context = {
+            "platform": self.flag,
+            "id": self.id,
+            "name": self.name,
+            "title": title,
+            "format": format,
+            "now": datetime.now()
+        }
+
+        # 如果没有配置文件名模板则使用默认模板
+        if not self.output or '{{' not in self.output:
+            return self.default_filename_template(title, format)
+
+        try:
+            template = self.env.from_string(self.output)
+            rendered_output = template.render(context)
+
+            if "{{" in rendered_output or "}}" in rendered_output:
+                raise ValueError(f"路径中存在未解析的模板变量: {rendered_output}")
+
+            # 分割目录和文件名
+            directory, filename = os.path.split(rendered_output)
+
+            # 如果目录为空，使用默认输出路径
+            if not directory:
+                directory = "output"
+
+            return directory, filename
+
+        except (KeyError, ValueError, liquid.exceptions.TemplateError) as e:
+            logger.warning(f"{self.flag}模板渲染失败，使用默认文件名模板。错误信息: {e}")
+            return self.default_filename_template(title, format)
+
+    def default_filename_template(self, title, format):
+        live_time = time.strftime('%Y.%m.%d %H.%M.%S')
         filename = f'[{live_time}]{self.flag}{title[:50]}.{format}'
-        return filename
+        directory = self.output or 'output'
+        return directory, filename
 
     def get_streamlink(self):
         session = streamlink.session.Streamlink({
@@ -168,7 +244,7 @@ class LiveRecoder:
 
     def stream_writer(self, stream, url, filename):
         logger.info(f'{self.flag}获取到直播流链接：{filename}\n{stream.url}')
-        output = FileOutput(Path(f'{self.output}/{filename}'))
+        output = FileOutput(Path(filename))
         try:
             stream_fd, prebuffer = open_stream(stream)
             output.open()
@@ -189,17 +265,26 @@ class LiveRecoder:
         finally:
             output.close()
 
-    def run_ffmpeg(self, filename, format):
-        logger.info(f'{self.flag}开始ffmpeg封装：{filename}')
-        new_filename = filename.replace(f'.{format}', f'.{self.format}')
-        ffmpeg.input(f'{self.output}/{filename}').output(
-            f'{self.output}/{new_filename}',
+def run_ffmpeg(self, filename, format):
+    logger.info(f'{self.flag}开始ffmpeg封装：{filename}')
+    directory, file_basename = os.path.split(filename)
+    new_basename = file_basename.replace(f'.{format}', f'.{self.format}')
+    new_filename = os.path.join(directory, new_basename)
+
+    try:
+        ffmpeg.input(filename).output(
+            new_filename,
             codec='copy',
             map_metadata='-1',
             movflags='faststart'
         ).global_args('-hide_banner').run()
-        os.remove(f'{self.output}/{filename}')
 
+        # 确保封装成功后再删除原文件
+        os.remove(filename)
+        logger.info(f'{self.flag}封装完成，原始文件已删除：{filename}')
+
+    except Exception as e:
+        logger.error(f'{self.flag}FFmpeg 处理失败：{filename}\n错误信息：{e}')
 
 class Bilibili(LiveRecoder):
     async def run(self):
