@@ -34,7 +34,7 @@ class LiveRecoder:
         platform = user['platform']
         self.name = user.get('name', self.id)
         self.flag = f'[{platform}][{self.name}]'
-
+        
         self.interval = user.get('interval', 10)
         self.crypto_js_url = user.get('crypto_js_url', '')
         self.headers = user.get('headers', {'User-Agent': 'Chrome'})
